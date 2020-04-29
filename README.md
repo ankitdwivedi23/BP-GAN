@@ -1,1 +1,1 @@
-# cs231n-project
+# BP-GAN: Bibliophile GANs for Generating Book Covers
