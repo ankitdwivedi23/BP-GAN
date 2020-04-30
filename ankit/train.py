@@ -27,7 +27,8 @@ def weights_init_normal(m):
 
 # Arguments
 opt = args.get_setup_args()
-os.makedirs(os.path.join(opt.output_path, "mnist/dcgan/images"), exist_ok=True)
+output_images_path = os.path.join(opt.output_path, "mnist/dcgan/images")
+os.makedirs(output_images_path, exist_ok=True)
 
 # Loss function
 adversarial_loss = torch.nn.BCELoss()
@@ -119,4 +120,4 @@ for epoch in range(opt.n_epochs):
 
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
-            save_image(gen_imgs.data[:25], "results/mnist/dcgan/images/%d.png" % batches_done, nrow=5, normalize=True)
+            save_image(gen_imgs.data[:25], "{}/{}.png".format(output_images_path, batches_done), nrow=5, normalize=True)
