@@ -34,8 +34,8 @@ os.makedirs(output_images_path, exist_ok=True)
 adversarial_loss = torch.nn.BCELoss()
 
 # Initialize generator and discriminator
-generator = dcgan.Generator(opt)
-discriminator = dcgan.Discriminator(opt)
+generator = dcgan.Generator(opt).to(device)
+discriminator = dcgan.Discriminator(opt).to(device)
 
 #if cuda:
 #    generator.cuda()
@@ -79,7 +79,7 @@ for epoch in range(opt.n_epochs):
         fake = torch.empty((imgs.shape[0], 1), device=device).fill_(0.0)
 
         # Configure input
-        real_imgs = imgs.to(device=device)
+        real_imgs = imgs.to(device)
 
         # -----------------
         #  Train Generator
