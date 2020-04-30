@@ -133,3 +133,7 @@ images/
 train/
 val/
 test/
+mnist/
+
+# results
+results/
