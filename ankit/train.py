@@ -27,7 +27,9 @@ def weights_init_normal(m):
 
 # Arguments
 opt = args.get_setup_args()
-output_images_path = os.path.join(opt.output_path, "mnist/dcgan/images")
+input_images_path = opt.input_path
+output_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images")
+
 os.makedirs(output_images_path, exist_ok=True)
 
 # Loss function
@@ -47,15 +49,14 @@ generator.apply(weights_init_normal)
 discriminator.apply(weights_init_normal)
 
 # Configure data loader
-os.makedirs("./data/mnist", exist_ok=True)
+#os.makedirs("./data/mnist", exist_ok=True)
+
 dataloader = torch.utils.data.DataLoader(
-    datasets.MNIST(
-        "./data/mnist",
-        train=True,
-        download=True,
-        transform=transforms.Compose(
-            [transforms.Resize(opt.img_size), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
-        ),
+    datasets.ImageFolder(
+        input_images_path,
+        transforms.Compose([
+            transforms.Resize((opt.img_size, opt.img_size)),
+            transforms.ToTensor()])
     ),
     batch_size=opt.batch_size,
     shuffle=True,
