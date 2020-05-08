@@ -64,7 +64,7 @@ optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
 dataset = datasets.ImageFolder(root=input_images_path,
                                transform=transforms.Compose([
-                                   transforms.Resize((opt.img_size, opt.img_size))
+                                   transforms.Resize((opt.img_size, opt.img_size)),
                                    transforms.ToTensor()
                            ]))
 
