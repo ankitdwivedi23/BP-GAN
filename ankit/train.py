@@ -39,8 +39,8 @@ ndf = 64
 # Arguments
 opt = args.get_setup_args()
 input_images_path = opt.input_path
-output_images_path = os.path.join(opt.output_path, "celeba/dcgan/images")
-
+output_fixed_noise_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images-fixed/")
+output_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images/")
 os.makedirs(output_images_path, exist_ok=True)
 
 # Initialize BCELoss function
@@ -64,10 +64,8 @@ optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
 dataset = datasets.ImageFolder(root=input_images_path,
                                transform=transforms.Compose([
-                                   transforms.Resize(opt.img_size),
-                                   transforms.CenterCrop(opt.img_size),
-                                   transforms.ToTensor(),
-                                   transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                   transforms.Resize((opt.img_size, opt.img_size))
+                                   transforms.ToTensor()
                            ]))
 
 dataloader = torch.utils.data.DataLoader(dataset,
@@ -169,9 +167,10 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * len(dataloader) + i
         if (batches_done % opt.sample_interval == 0) or ((epoch == opt.n_epochs-1) and (i == len(dataloader)-1)):
             with torch.no_grad():
-                fake = netG(fixed_noise).detach().cpu()
-            vutils.save_image(fake.data[:25], "{}/{}.png".format(output_images_path, batches_done), nrow=5, padding=5, normalize=True)
+                fake_fixed = netG(fixed_noise).detach().cpu()
+            vutils.save_image(fake_fixed.data[:25], "{}/{}.png".format(output_fixed_noise_images_path, batches_done), nrow=5, padding=2, normalize=True)
+            vutils.save_image(fake.data[:25], "{}/{}.png".format(output_images_path, batches_done), nrow=5, padding=2, normalize=True)
 
-print("Saving plot showing generator and discriminator loss during training:")
-
-save_loss_plot(os.path.join(opt.output_path, "celeba/dcgan/loss_plot.png"))
+print("Saving plot showing generator and discriminator loss during training...")
+save_loss_plot(os.path.join(opt.output_path, "book-dataset/Task1/dcgan/loss_plot.png"))
+print("Done!")
