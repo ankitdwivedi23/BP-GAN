@@ -39,9 +39,11 @@ ndf = 64
 # Arguments
 opt = args.get_setup_args()
 input_images_path = opt.input_path
-output_fixed_noise_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images-fixed/")
 output_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images/")
+output_fixed_noise_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images-fixed/")
+
 os.makedirs(output_images_path, exist_ok=True)
+os.makedirs(output_fixed_noise_images_path, exist_ok=True)
 
 # Initialize BCELoss function
 criterion = nn.BCELoss()
