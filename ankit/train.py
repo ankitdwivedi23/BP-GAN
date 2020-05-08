@@ -47,8 +47,8 @@ os.makedirs(output_images_path, exist_ok=True)
 criterion = nn.BCELoss()
 
 # Initialize generator and discriminator
-netG = dcgan.Generator(nc, nz, ngf)
-netD = dcgan.Discriminator(nc, ndf)
+netG = dcgan.Generator(nc, nz, ngf).to(device)
+netD = dcgan.Discriminator(nc, ndf).to(device)
 
 # Create batch of latent vectors to visualize
 # the progress of the generator
