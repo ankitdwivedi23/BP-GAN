@@ -31,7 +31,7 @@ class Generator(nn.Module):
         )
 
     def forward(self, z):
-        img = self.model(input)
+        img = self.model(z)
         return img
 
 class Discriminator(nn.Module):
@@ -60,5 +60,5 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, img):
-        prediction = self.model(input)
+        prediction = self.model(img)
         return prediction
