@@ -164,10 +164,10 @@ for epoch in range(opt.num_epochs):
         # Output training stats
         if i % opt.print_every == 0:
             print("[Epoch %d/%d] [Batch %d/%d] [D loss: %.4f] [G loss: %.4f] [D(x): %.4f] [D(G(z)): %.4f / %.4f]"
-            % (epoch, opt.n_epochs, i, len(dataloader), errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
+            % (epoch, opt.num_epochs, i, len(dataloader), errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
 
         batches_done = epoch * len(dataloader) + i
-        if (batches_done % opt.sample_interval == 0) or ((epoch == opt.n_epochs-1) and (i == len(dataloader)-1)):
+        if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
             with torch.no_grad():
                 fake_fixed = netG(fixed_noise).detach().cpu()
             vutils.save_image(fake_fixed.data[:25], "{}/{}.png".format(output_fixed_noise_images_path, batches_done), nrow=5, padding=2, normalize=True)
