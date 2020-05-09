@@ -39,8 +39,8 @@ ndf = 64
 # Arguments
 opt = args.get_setup_args()
 input_images_path = opt.input_path
-output_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images/")
-output_fixed_noise_images_path = os.path.join(opt.output_path, "book-dataset/Task1/dcgan/images-fixed/")
+output_images_path = os.path.join(opt.output_path, "dcgan/images/")
+output_fixed_noise_images_path = os.path.join(opt.output_path, "dcgan/images-fixed/")
 
 os.makedirs(output_images_path, exist_ok=True)
 os.makedirs(output_fixed_noise_images_path, exist_ok=True)
@@ -174,5 +174,5 @@ for epoch in range(opt.n_epochs):
             vutils.save_image(fake.data[:25], "{}/{}.png".format(output_images_path, batches_done), nrow=5, padding=2, normalize=True)
 
 print("Saving plot showing generator and discriminator loss during training...")
-save_loss_plot(os.path.join(opt.output_path, "book-dataset/Task1/dcgan/loss_plot.png"))
+save_loss_plot(os.path.join(opt.output_path, "dcgan/loss_plot.png"))
 print("Done!")
