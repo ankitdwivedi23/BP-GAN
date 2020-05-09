@@ -95,7 +95,7 @@ def save_loss_plot(path):
 
 print("Starting Training Loop...")
 # For each epoch
-for epoch in range(opt.n_epochs):
+for epoch in range(opt.num_epochs):
     # For each batch in the dataloader
     for i, data in enumerate(dataloader, 0):
 
