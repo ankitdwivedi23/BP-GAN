@@ -134,6 +134,7 @@ train/
 val/
 test/
 mnist/
+celeba/
 
 # results
 results/
