@@ -42,6 +42,7 @@ def main():
     parser.add_argument("--output_root", type=str, default="data_split", help="path to root directory for storing train-test split")
     parser.add_argument("--img_size", type=int, default=64, help="size of each image dimension")
     parser.add_argument("--random_seed", type=int, default=23, help="random seed for train-test split")
+    parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")
     args = parser.parse_args()
 
     output_train = os.path.join(args.output_root, "train/")
@@ -77,7 +78,7 @@ def main():
         dataloader = torch.utils.data.DataLoader(dataset,
                                                 batch_size=len(dataset),
                                                 shuffle=True,
-                                                num_workers=1)
+                                                num_workers=args.num_workers)
 
 
         for i, (imgs, _) in enumerate(dataloader):
