@@ -42,6 +42,8 @@ def main():
     parser.add_argument("--output_root", type=str, default="data_split", help="path to root directory for storing train-test split")
     parser.add_argument("--img_size", type=int, default=64, help="size of each image dimension")
     parser.add_argument("--random_seed", type=int, default=23, help="random seed for train-test split")
+    parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")
+    parser.add_argument("--batch_size", type=int, default=128, help="size of the batches")
     args = parser.parse_args()
 
     output_train = os.path.join(args.output_root, "train/")
@@ -75,12 +77,13 @@ def main():
                                 ]))
 
         dataloader = torch.utils.data.DataLoader(dataset,
-                                                batch_size=len(dataset),
+                                                batch_size=args.batch_size,
                                                 shuffle=True,
-                                                num_workers=1)
+                                                num_workers=args.num_workers)
 
-
-        for i, (imgs, _) in enumerate(dataloader):
+        train_count = 0
+        test_count = 0
+        for _, (imgs, _) in tqdm(enumerate(dataloader)):
             X = imgs.numpy()
 
             X_train, X_test = \
@@ -95,12 +98,14 @@ def main():
             for i in range(imgs_train.size(0)):
                 output_path = os.path.join(output_train, label)
                 os.makedirs(output_path, exist_ok=True)
-                vutils.save_image(imgs_train[i, :, :, :], "{}/{}.jpg".format(output_path, i))
+                vutils.save_image(imgs_train[i, :, :, :], "{}/{}.jpg".format(output_path, train_count))
+                train_count += 1
             
             for i in range(imgs_test.size(0)):
                 output_path = os.path.join(output_test, label)
                 os.makedirs(output_path, exist_ok=True)
-                vutils.save_image(imgs_test[i, :, :, :], "{}/{}.jpg".format(output_path, i))
+                vutils.save_image(imgs_test[i, :, :, :], "{}/{}.jpg".format(output_path, test_count))
+                test_count += 1
         
         # Delete dummy folder
         rmtree(dummy_folder)
