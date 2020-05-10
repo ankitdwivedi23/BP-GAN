@@ -81,7 +81,8 @@ def main():
                                                 shuffle=True,
                                                 num_workers=args.num_workers)
 
-
+        train_count = 0
+        test_count = 0
         for i, (imgs, _) in tqdm(enumerate(dataloader)):
             X = imgs.numpy()
 
@@ -94,15 +95,17 @@ def main():
             imgs_train = torch.from_numpy(X_train)
             imgs_test = torch.from_numpy(X_test)
             
-            for i in range(imgs_train.size(0)):
+            for _ in range(imgs_train.size(0)):
                 output_path = os.path.join(output_train, label)
                 os.makedirs(output_path, exist_ok=True)
-                vutils.save_image(imgs_train[i, :, :, :], "{}/{}.jpg".format(output_path, i))
+                vutils.save_image(imgs_train[i, :, :, :], "{}/{}.jpg".format(output_path, train_count))
+                train_count += 1
             
-            for i in range(imgs_test.size(0)):
+            for _ in range(imgs_test.size(0)):
                 output_path = os.path.join(output_test, label)
                 os.makedirs(output_path, exist_ok=True)
-                vutils.save_image(imgs_test[i, :, :, :], "{}/{}.jpg".format(output_path, i))
+                vutils.save_image(imgs_test[i, :, :, :], "{}/{}.jpg".format(output_path, test_count))
+                test_count += 1
         
         # Delete dummy folder
         rmtree(dummy_folder)
