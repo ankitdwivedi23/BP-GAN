@@ -43,6 +43,7 @@ def main():
     parser.add_argument("--img_size", type=int, default=64, help="size of each image dimension")
     parser.add_argument("--random_seed", type=int, default=23, help="random seed for train-test split")
     parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")
+    parser.add_argument("--batch_size", type=int, default=128, help="size of the batches")
     args = parser.parse_args()
 
     output_train = os.path.join(args.output_root, "train/")
@@ -76,12 +77,12 @@ def main():
                                 ]))
 
         dataloader = torch.utils.data.DataLoader(dataset,
-                                                batch_size=len(dataset),
+                                                batch_size=args.batch_size,
                                                 shuffle=True,
                                                 num_workers=args.num_workers)
 
 
-        for i, (imgs, _) in enumerate(dataloader):
+        for i, (imgs, _) in tqdm(enumerate(dataloader)):
             X = imgs.numpy()
 
             X_train, X_test = \
