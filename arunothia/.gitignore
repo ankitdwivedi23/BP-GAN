@@ -132,3 +132,7 @@ dmypy.json
 train/
 val/
 test/
+
+# data and results folders
+results/
+data/
