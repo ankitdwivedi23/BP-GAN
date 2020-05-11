@@ -16,7 +16,7 @@ class ChunkSampler(sampler.Sampler):
     def __len__(self):
         return self.num_samples
 
-def load_data(data_type, NUM_TRAIN=50000, batch_size=128, img_resize=28):
+def load_data(data_type, NUM_TRAIN=50000, batch_size=128, img_resize=28, num_channels=1):
 
     NUM_VAL = int(NUM_TRAIN/10)
 
@@ -38,7 +38,7 @@ def load_data(data_type, NUM_TRAIN=50000, batch_size=128, img_resize=28):
 
         book_data = datasets.ImageFolder(root='../data/book-dataset/',
                                             transform=transforms.Compose([
-                                            transforms.Grayscale(num_output_channels=1),
+                                            transforms.Grayscale(num_output_channels=num_channels),
                                             transforms.Resize((img_resize, img_resize)),
                                             transforms.ToTensor()
                                     ]))
@@ -49,7 +49,7 @@ def load_data(data_type, NUM_TRAIN=50000, batch_size=128, img_resize=28):
         loader_val = DataLoader(book_data, batch_size=batch_size,
                                 sampler=ChunkSampler(NUM_VAL, NUM_TRAIN))
 
-        imgs = loader_train.__iter__().next()[0].view(batch_size, img_resize*img_resize).numpy().squeeze()   
+        imgs = loader_train.__iter__().next()[0].view(batch_size*num_channels, img_resize*img_resize).numpy().squeeze()   
 
     else:
         print("NO DATASET CHOSEN")

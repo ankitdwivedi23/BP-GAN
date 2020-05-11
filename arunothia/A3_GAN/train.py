@@ -15,7 +15,7 @@ def get_optimizer(model):
     return optimizer
 
 def run_a_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader_train, loader_val, 
-                show_every=250, batch_size=128, noise_size=96, num_epochs=10):
+                show_every=250, batch_size=128, noise_size=96, num_epochs=10, img_resize=28, num_channels=1):
     """
     Train a GAN!
     
@@ -36,7 +36,7 @@ def run_a_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, load
             if len(x) != batch_size:
                 continue
 
-            x = x.view(-1, 784)
+            x = x.view(-1, img_resize*img_resize*num_channels)
             D_solver.zero_grad()
             real_data = x.type(dtype)
             logits_real = D(2* (real_data - 0.5)).type(dtype)

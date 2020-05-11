@@ -1,6 +1,6 @@
 from setup import *
 
-def generator(noise_dim):
+def generator(noise_dim, img_resize=28, num_channels=1):
     """
     Build and return a PyTorch model implementing the architecture above.
     """
@@ -11,7 +11,7 @@ def generator(noise_dim):
             nn.ReLU(True),
             nn.Linear(1024, 1024, bias=True),
             nn.ReLU(True),
-            nn.Linear(1024, 784, bias=True),
+            nn.Linear(1024, img_resize*img_resize*num_channels, bias=True),
             nn.Tanh()
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
