@@ -42,8 +42,8 @@ def main():
     parser.add_argument("--output_root", type=str, default="data_split", help="path to root directory for storing train-test split")
     parser.add_argument("--img_size", type=int, default=64, help="size of each image dimension")
     parser.add_argument("--random_seed", type=int, default=23, help="random seed for train-test split")
-    parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")
-    parser.add_argument("--batch_size", type=int, default=128, help="size of the batches")
+    parser.add_argument("--num_workers", type=int, default=8, help="number of workers for dataloader")
+    parser.add_argument("--batch_size", type=int, default=256, help="size of the batches")
     args = parser.parse_args()
 
     output_train = os.path.join(args.output_root, "train/")
