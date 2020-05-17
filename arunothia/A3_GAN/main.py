@@ -50,12 +50,10 @@ G_solver = get_optimizer(G)
 '''
 run_a_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader_train, loader_val,
                 args.SHOW_EVERY, args.BATCH_SIZE, args.NOISE_DIM, args.NUM_EPOCHS, args.IMG_RESIZE, args.NUM_CHANNELS)
-'''
 
 run_a_gan(D, G, D_solver, G_solver, ls_discriminator_loss, ls_generator_loss, loader_train, loader_val,
                 args.SHOW_EVERY, args.BATCH_SIZE, args.NOISE_DIM, args.NUM_EPOCHS, args.IMG_RESIZE, args.NUM_CHANNELS)
-
-''''
+'''
 
 D_DC = build_dc_classifier(args.IMG_RESIZE, args.NUM_CHANNELS).type(dtype) 
 D_DC.apply(initialize_weights)
@@ -67,5 +65,3 @@ G_DC_solver = get_optimizer(G_DC)
 
 run_a_gan(D_DC, G_DC, D_DC_solver, G_DC_solver, ls_discriminator_loss, ls_generator_loss, loader_train, loader_val,
                 args.SHOW_EVERY, args.BATCH_SIZE, args.NOISE_DIM, args.NUM_EPOCHS, args.IMG_RESIZE, args.NUM_CHANNELS)
-
-'''
