@@ -62,7 +62,7 @@ def run_a_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, load
                 print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count,d_total_error.item(),g_error.item()))
                 imgs_numpy = fake_images.data.cpu().numpy()
                 plt = show_images(imgs_numpy[0:16])
-                plt.savefig('../Results/{}'.format(iter_count))  
+                plt.savefig('../results/{}'.format(iter_count))  
                 #plt.show()
                 print()
             iter_count += 1
