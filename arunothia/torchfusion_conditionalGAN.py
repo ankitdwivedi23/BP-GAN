@@ -21,7 +21,7 @@ g_optim = Adam(G.parameters(),lr=0.0002,betas=(0.5,0.999))
 d_optim = Adam(D.parameters(),lr=0.0002,betas=(0.5,0.999))
 
 
-book_data  = datasets.ImageFolder(root='data/Task2_Split/Task2_Split/train',
+book_data  = datasets.ImageFolder(root='data/Task2_split/Task2_Split/train',
                                transform=transforms.Compose([
                                    transforms.Resize((64, 64)),
                                    transforms.ToTensor()
