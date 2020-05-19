@@ -7,8 +7,10 @@ import torch
 import torch.nn as nn
 from torchvision import datasets 
 import torchvision.transforms as transforms
+from torchvision.utils import save_image
+from torch.distributions import Normal
 
-G = StandardGenerator(output_size=(3,64,64),latent_size=128,num_classes=6)
+G = StandardGenerator(output_size=(3,64,64),latent_size=3*64*64,num_classes=6)
 D = StandardProjectionDiscriminator(input_size=(3,64,64),apply_sigmoid=False,num_classes=6)
 
 if cuda.is_available():
@@ -30,9 +32,7 @@ book_dataset =  torch.utils.data.DataLoader(book_data,
                                         shuffle=True)
 
 
-dataset = fashionmnist_loader(size=32,batch_size=64)
-
 learner = RStandardGanLearner(G,D)
 
 if __name__ == "__main__":
-   learner.train(book_dataset,num_classes=6,gen_optimizer=g_optim,disc_optimizer=d_optim,save_outputs_interval=500,model_dir="./fashion-gan",latent_size=128,num_epochs=50,batch_log=False)
+    learner.train(book_dataset,num_classes=6,gen_optimizer=g_optim,disc_optimizer=d_optim,save_outputs_interval=500,model_dir="./genre-gan",latent_size=3*64*64,num_epochs=10,batch_log=False)
