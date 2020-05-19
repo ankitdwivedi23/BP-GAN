@@ -212,7 +212,7 @@ def main():
             # Put G in eval mode
             netG.eval()
             
-            if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
+            if (batches_done % opt.eval_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
                 print("Evaluating...")
                 with torch.no_grad():                
                     fake_grid = netG(grid_noise).detach().cpu()

@@ -12,7 +12,7 @@ def get_setup_args():
     parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
     parser.add_argument("--img_size", type=int, default=64, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=3, help="number of image channels")
-    parser.add_argument("--sample_interval", type=int, default=400, help="number of batches between image sampling")
+    parser.add_argument("--eval_interval", type=int, default=400, help="number of batches between evaluation")
     parser.add_argument("--print_every", type=int, default=50, help="number of iterations between printing training stats")
     parser.add_argument("--data_path", type=str, default="data", help="path to root data directory")
     parser.add_argument("--output_path", type=str, default="results", help="path to directory for storing model output")
