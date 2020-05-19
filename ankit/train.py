@@ -130,7 +130,7 @@ def main():
         plt.plot(FIDs)
         plt.xlabel("epochs")
         plt.ylabel("FID")
-        plt.xticks([i * opt.eval_epochs for i in range(1, N+1)])    
+        plt.xlim(0, opt.num_epochs)
         plt.savefig(path)
 
 
@@ -213,25 +213,26 @@ def main():
             netG.eval()
             
             if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
+                print("Evaluating...")
                 with torch.no_grad():                
                     fake_grid = netG(grid_noise).detach().cpu()
+                    fake_val = netG(val_noise).detach().cpu()
                 vutils.save_image(fake_grid.data[:64], "{}/{}.png".format(output_grid_images_path, batches_done), nrow=5, padding=2, normalize=True)
                 vutils.save_image(fake.data[:64], "{}/{}.png".format(output_train_images_path, batches_done), nrow=5, padding=2, normalize=True)
-            
-            if (epoch % opt.eval_epochs == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
-                with torch.no_grad():
-                    fake_val = netG(val_noise).detach().cpu()
                 fid = eval_fid(fake_val, epoch)
-                print("[Epoch %d/%d] [Val FID: %.4f]" % (epoch, opt.num_epochs, fid))
+                print("[Val FID: %.4f]" % (epoch, opt.num_epochs, fid))
                 FIDs.append(fid)
                 if fid < best_fid:
                     print("NEW Best Model found!")
                     best_fid = fid
-                    torch.save(netG.state_dict(), os.path.join(output_model_path, "model.pt"))
+                    torch.save(netG.state_dict(), os.path.join(output_model_path, "model.pt"))               
             
             # Put G back in train mode
             netG.train()
 
+    print("Saving FID plot...")
+    save_fid_plot(os.path.join(opt.output_path, opt.version, "fid_plot.png"))
+    print("Done!")
 
     print("Saving plot showing generator and discriminator loss during training...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))

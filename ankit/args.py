@@ -16,5 +16,4 @@ def get_setup_args():
     parser.add_argument("--print_every", type=int, default=50, help="number of iterations between printing training stats")
     parser.add_argument("--data_path", type=str, default="data", help="path to root data directory")
     parser.add_argument("--output_path", type=str, default="results", help="path to directory for storing model output")
-    parser.add_argument("--eval_epochs", type=int, default=3, help="number of epochs between FID evaluation")
     return parser.parse_args()
