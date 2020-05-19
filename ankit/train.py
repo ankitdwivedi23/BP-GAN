@@ -34,6 +34,7 @@ def main():
     def eval_fid(fake_images, epoch):
         output_path = os.path.join(output_val_images_path, str(epoch))
         os.makedirs(output_path, exist_ok=True)
+        print("Saving images generated for validation...")
         for i in range(fake_images.size(0)):
             vutils.save_image(fake_images[i, :, :, :], "{}/{}.jpg".format(output_path, i))    
         fid = fid_score.calculate_fid_given_paths((output_path, val_images_path), opt.batch_size, device)
@@ -213,14 +214,14 @@ def main():
             netG.eval()
             
             if (batches_done % opt.eval_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
-                print("Evaluating...")
+                print("Evaluating at [Epoch %d/%d] [Batch %d/%d]" % (epoch, opt.num_epochs, i, len(dataloader)))
                 with torch.no_grad():                
                     fake_grid = netG(grid_noise).detach().cpu()
                     fake_val = netG(val_noise).detach().cpu()
                 vutils.save_image(fake_grid.data[:64], "{}/{}.png".format(output_grid_images_path, batches_done), nrow=5, padding=2, normalize=True)
                 vutils.save_image(fake.data[:64], "{}/{}.png".format(output_train_images_path, batches_done), nrow=5, padding=2, normalize=True)
                 fid = eval_fid(fake_val, epoch)
-                print("[Val FID: %.4f]" % (epoch, opt.num_epochs, fid))
+                print("[Val FID: %.4f]" % (fid))
                 FIDs.append(fid)
                 if fid < best_fid:
                     print("NEW Best Model found!")
