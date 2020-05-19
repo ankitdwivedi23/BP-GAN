@@ -9,8 +9,25 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.distributions import Normal
+import argparse
 
-G = StandardGenerator(output_size=(3,64,64),latent_size=3*64*64,num_classes=6)
+parser = argparse.ArgumentParser(description='Load the desired dataset')
+
+parser.add_argument('--BATCH_SIZE', type=int, default=128,
+                    help='batch size, default value is 128')
+
+parser.add_argument('--LATENT_SIZE', type=int, default=3*64*64,
+                    help='Latent size, default value is 3*64*64')
+
+parser.add_argument('--SHOW_EVERY', type=int, default=500,
+                    help='Show every, default value is 500')
+
+parser.add_argument('--NUM_EPOCHS', type=int, default=100,
+                    help='Number of Epochs, default value is 100')
+
+args = parser.parse_args()
+
+G = StandardGenerator(output_size=(3,64,64),latent_size=args.LATENT_SIZE,num_classes=6)
 D = StandardProjectionDiscriminator(input_size=(3,64,64),apply_sigmoid=False,num_classes=6)
 
 if cuda.is_available():
@@ -28,11 +45,12 @@ book_data  = datasets.ImageFolder(root='data/Task2_split/Task2_Split/train',
                            ]))
 
 book_dataset =  torch.utils.data.DataLoader(book_data,
-                                        batch_size=128,
+                                        batch_size=args.BATCH_SIZE,
                                         shuffle=True)
 
 
 learner = RStandardGanLearner(G,D)
 
 if __name__ == "__main__":
-    learner.train(book_dataset,num_classes=6,gen_optimizer=g_optim,disc_optimizer=d_optim,save_outputs_interval=500,model_dir="./genre-gan",latent_size=3*64*64,num_epochs=10,batch_log=False)
+    learner.train(book_dataset,num_classes=6,gen_optimizer=g_optim,disc_optimizer=d_optim,save_outputs_interval=args.SHOW_EVERY, \
+        model_dir="./genre-gan",latent_size=args.LATENT_SIZE,num_epochs=args.NUM_EPOCHS,batch_log=False)
