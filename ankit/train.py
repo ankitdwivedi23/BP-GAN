@@ -193,7 +193,6 @@ def main():
                 # Put G in eval mode
                 netG.eval()
                 
-                print("Evaluating at [Epoch %d/%d] [Batch %d/%d]" % (epoch, opt.num_epochs, i, len(dataloader)))
                 with torch.no_grad():                
                     fake_sample = netG(sample_noise).detach().cpu()
                 vutils.save_image(fake_sample.data[:64], "{}/{}.png".format(output_sample_images_path, batches_done), nrow=5, padding=2, normalize=True)
