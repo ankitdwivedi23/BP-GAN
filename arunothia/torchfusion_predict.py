@@ -9,8 +9,8 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Load the desired dataset')
 
-parser.add_argument('--LATENT_SIZE', type=int, default=3*64*64,
-                    help='Latent size, default value is 3*64*64')
+parser.add_argument('--LATENT_SIZE', type=int, default=128,
+                    help='Latent size, default value is 128')
 
 parser.add_argument('--LABEL_TO_GENERATE', type=int, default=1,
                     help='Label to generate, default value is 1')

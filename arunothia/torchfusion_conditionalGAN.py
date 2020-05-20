@@ -1,5 +1,5 @@
 from torchfusion.gan.learners import *
-from torchfusion.gan.applications import StandardGenerator,StandardProjectionDiscriminator
+from torchfusion.gan.applications import *
 from torch.optim import Adam
 from torchfusion.datasets import fashionmnist_loader
 import torch.cuda as cuda
@@ -27,8 +27,12 @@ parser.add_argument('--NUM_EPOCHS', type=int, default=100,
 
 args = parser.parse_args()
 
-G = StandardGenerator(output_size=(3,64,64),latent_size=args.LATENT_SIZE,num_classes=6)
-D = StandardProjectionDiscriminator(input_size=(3,64,64),apply_sigmoid=False,num_classes=6)
+#G = StandardGenerator(output_size=(3,64,64),latent_size=args.LATENT_SIZE,num_classes=6)
+G = ResGenerator(output_size=(3,64,64),num_classes=6,latent_size=args.LATENT_SIZE, \
+        kernel_size=3,activation=nn.ReLU(),conv_groups=1,attention=False,dropout_ratio=0)
+#D = StandardProjectionDiscriminator(input_size=(3,64,64),apply_sigmoid=False,num_classes=6)
+D = ResProjectionDiscriminator(input_size=(3,64,64),num_classes=6,kernel_size=3,activation=nn.ReLU(), \
+        attention=True,apply_sigmoid=False,conv_groups=1,dropout_ratio=0)
 
 if cuda.is_available():
     G = nn.DataParallel(G.cuda())
