@@ -16,8 +16,8 @@ parser = argparse.ArgumentParser(description='Load the desired dataset')
 parser.add_argument('--BATCH_SIZE', type=int, default=128,
                     help='batch size, default value is 128')
 
-parser.add_argument('--LATENT_SIZE', type=int, default=3*64*64,
-                    help='Latent size, default value is 3*64*64')
+parser.add_argument('--LATENT_SIZE', type=int, default=128,
+                    help='Latent size, default value is 128')
 
 parser.add_argument('--SHOW_EVERY', type=int, default=500,
                     help='Show every, default value is 500')
