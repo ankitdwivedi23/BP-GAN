@@ -9,12 +9,12 @@ from torchvision.utils import save_image
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images", exist_ok=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_epochs", type=int, default=200, help="number of epochs of training")
@@ -30,6 +30,7 @@ parser.add_argument("--channels", type=int, default=3, help="number of image cha
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
 parser.add_argument("--data_path", type=str, default="data", help="path to root data directory")
 parser.add_argument("--output_path", type=str, default="results", help="path to directory for storing model output")
+parser.add_argument("--print_every", type=int, default=50, help="number of iterations between printing training stats")
 parser.add_argument("--version", type=str, help="model name or version")
 opt = parser.parse_args()
 
@@ -45,6 +46,16 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 
 cuda = True if torch.cuda.is_available() else False
 
+
+def save_loss_plot(path):
+        plt.figure(figsize=(10,5))
+        plt.title("Generator and Discriminator Loss During Training")
+        plt.plot(G_losses,label="G")
+        plt.plot(D_losses,label="D")
+        plt.xlabel("iterations")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.savefig(path)
 
 class Generator(nn.Module):
     def __init__(self):
@@ -148,6 +159,9 @@ def sample_image(n_row, filepath, batches_done):
 #  Training
 # ----------
 
+G_losses = []
+D_losses = []
+
 for epoch in range(opt.num_epochs):
     for i, (imgs, labels) in enumerate(dataloader):
 
@@ -198,14 +212,25 @@ for epoch in range(opt.num_epochs):
         # Total discriminator loss
         d_loss = (d_real_loss + d_fake_loss) / 2
 
+        # Save Losses for plotting
+        G_losses.append(g_loss.item())
+        D_losses.append(d_loss.item())
+
         d_loss.backward()
         optimizer_D.step()
 
-        print(
-            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-            % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
-        )
+        if i % opt.print_every == 0:
+            print("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
+            % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item()))
 
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=6, filepath=output_sample_images_path, batches_done=batches_done)
+
+print("Saving generator model...")
+torch.save(generator.state_dict(), os.path.join(output_model_path, "model.pt"))
+print("Done!")
+
+print("Saving plot showing generator and discriminator loss during training...")
+save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
+print("Done!")
