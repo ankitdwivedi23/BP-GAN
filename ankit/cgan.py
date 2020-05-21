@@ -203,7 +203,7 @@ for epoch in range(opt.num_epochs):
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-            % (epoch, opt.n_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
+            % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
         )
 
         batches_done = epoch * len(dataloader) + i
