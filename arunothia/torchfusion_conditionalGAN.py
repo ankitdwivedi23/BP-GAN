@@ -1,6 +1,6 @@
 from torchfusion.gan.learners import *
 from torchfusion.gan.applications import *
-from torch.optim import Adam
+from torch.optim import *
 from torchfusion.datasets import fashionmnist_loader
 import torch.cuda as cuda
 import torch
@@ -29,9 +29,9 @@ args = parser.parse_args()
 
 #G = StandardGenerator(output_size=(3,64,64),latent_size=args.LATENT_SIZE,num_classes=6)
 G = ResGenerator(output_size=(3,64,64),num_classes=6,latent_size=args.LATENT_SIZE, \
-        kernel_size=3,activation=nn.ReLU(),conv_groups=1,attention=False,dropout_ratio=0)
+        kernel_size=3,activation=nn.LeakyReLU(),conv_groups=1,attention=False,dropout_ratio=0)
 D = StandardProjectionDiscriminator(input_size=(3,64,64),apply_sigmoid=False,num_classes=6)
-#D = ResProjectionDiscriminator(input_size=(3,64,64),num_classes=6,kernel_size=3,activation=nn.ReLU(), \
+#D = ResProjectionDiscriminator(input_size=(3,64,64),num_classes=6,kernel_size=3,activation=nn.LeakyReLU(), \
 #        attention=True,apply_sigmoid=False,conv_groups=1,dropout_ratio=0)
 
 if cuda.is_available():
@@ -39,7 +39,8 @@ if cuda.is_available():
     D = nn.DataParallel(D.cuda())
 
 g_optim = Adam(G.parameters(),lr=0.0002,betas=(0.5,0.999))
-d_optim = Adam(D.parameters(),lr=0.0002,betas=(0.5,0.999))
+d_optim = SGD(D.parameters(), lr=0.0002)
+#d_optim = Adam(D.parameters(),lr=0.0002,betas=(0.5,0.999))
 
 
 book_data  = datasets.ImageFolder(root='data/Task2_split/Task2_Split/train',
