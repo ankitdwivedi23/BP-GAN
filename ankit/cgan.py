@@ -30,6 +30,7 @@ parser.add_argument("--channels", type=int, default=3, help="number of image cha
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
 parser.add_argument("--data_path", type=str, default="data", help="path to root data directory")
 parser.add_argument("--output_path", type=str, default="results", help="path to directory for storing model output")
+parser.add_argument("--version", type=str, help="model name or version")
 opt = parser.parse_args()
 
 train_images_path = os.path.join(opt.data_path, "train")
