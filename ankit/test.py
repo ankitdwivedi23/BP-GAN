@@ -52,6 +52,7 @@ def main():
                             ]))
 
     netG = dcgan.Generator(nc, nz, ngf)
+    netG = netG.to(device)
     netG.load_state_dict(torch.load(os.path.join(model_path, "model.pt")))
     netG.eval()
 
