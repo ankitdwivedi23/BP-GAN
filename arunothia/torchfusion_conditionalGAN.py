@@ -39,7 +39,7 @@ if cuda.is_available():
     D = nn.DataParallel(D.cuda())
 
 g_optim = Adam(G.parameters(),lr=0.0002,betas=(0.5,0.999))
-d_optim = SGD(D.parameters(), lr=0.0002)
+d_optim = SGD(D.parameters(), lr=0.01, momentum=0.9)
 #d_optim = Adam(D.parameters(),lr=0.0002,betas=(0.5,0.999))
 
 
