@@ -11,7 +11,6 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_root", type=str, default="data", help="path to root directory of full images dataset")
-    parser.add_argument("--output_root", type=str, default="data_split", help="path to root directory for storing train-test split")
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--random_seed", type=int, default=23, help="random seed for train-test split")
     parser.add_argument("--num_workers", type=int, default=8, help="number of workers for dataloader")
