@@ -6,6 +6,7 @@ import torch.utils.data
 from torchvision import datasets
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
+from tqdm import tqdm
 
 def main():
     # Arguments
@@ -32,7 +33,7 @@ def main():
     nimages = 0
     mean = 0.0
     var = 0.0
-    for _, batch_target in enumerate(dataloader):
+    for _, batch_target in tqdm(enumerate(dataloader)):
         batch = batch_target[0]
         # Rearrange batch to be the shape of [B, C, W * H]
         batch = batch.view(batch.size(0), batch.size(1), -1)
