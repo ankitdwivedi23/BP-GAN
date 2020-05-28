@@ -47,6 +47,7 @@ def main():
     args = parser.parse_args()
 
     output_train = os.path.join(args.output_root, "train/")
+    output_val = os.path.join(args.output_root, "val/")
     output_test = os.path.join(args.output_root, "test/")
 
     os.makedirs(output_train, exist_ok=True)
@@ -94,7 +95,14 @@ def main():
                                 random_state=args.random_seed,
                                 shuffle=True)
             
+            X_train, X_val = \
+                train_test_split(X_train,
+                                test_size=0.1,
+                                random_state=args.random_seed,
+                                shuffle=True)
+            
             imgs_train = torch.from_numpy(X_train)
+            imgs_val = torch.from_numpy(X_val)
             imgs_test = torch.from_numpy(X_test)
             
             for i in range(imgs_train.size(0)):
@@ -102,6 +110,12 @@ def main():
                 os.makedirs(output_path, exist_ok=True)
                 vutils.save_image(imgs_train[i, :, :, :], "{}/{}.jpg".format(output_path, train_count))
                 train_count += 1
+            
+            for i in range(imgs_val.size(0)):
+                output_path = os.path.join(output_val, label)
+                os.makedirs(output_path, exist_ok=True)
+                vutils.save_image(imgs_val[i, :, :, :], "{}/{}.jpg".format(output_path, val_count))
+                val_count += 1
             
             for i in range(imgs_test.size(0)):
                 output_path = os.path.join(output_test, label)
