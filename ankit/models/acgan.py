@@ -84,14 +84,13 @@ class Discriminator(nn.Module):
         self.fc_source=nn.Linear(16*16*512,1)
         self.fc_class=nn.Linear(16*16*512, num_classes)
         self.sig=nn.Sigmoid()
-        self.soft=nn.Softmax()
     
     def forward(self, x):
         x = self.conv_layers(x)
-        rf_score = self.sig(self.fc_source(x)) # real or fake score
-        class_scores = self.soft(self.fc_class(x)) # softmax scores for each class
+        validity = self.sig(self.fc_source(x)) # real or fake score
+        class_scores = self.fc_class(x) # logit scores for each class
 
-        return rf_score, class_scores
+        return validity, class_scores
 
 
 
