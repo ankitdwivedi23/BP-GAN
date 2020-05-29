@@ -77,6 +77,11 @@ def main():
     D_losses = []
     D_acc = []
 
+    def print_labels():
+        for class_name in train_set.classes:
+            print("{} -> {}".format(class_name, train_set.class_to_idx[class_name]))
+
+
 
     def eval_fid(gen_images_path, eval_images_path):        
         print("Calculating FID...")
@@ -149,6 +154,10 @@ def main():
         plt.xlabel("iterations")
         plt.ylabel("accuracy")
         plt.savefig(path)
+
+    
+    print("Label to class mapping:")
+    print_labels()
 
     for epoch in range(opt.num_epochs):
         for i, data in enumerate(dataloader, 0):
@@ -223,7 +232,7 @@ def main():
                 gen.eval()
                 
                 with torch.no_grad():                
-                    sample_images(6, batches_done)
+                    sample_images(num_images=6, batches_done)
                 vutils.save_image(gen_images.data[:36], "{}/{}.png".format(output_train_images_path, batches_done), nrow=6, padding=2, normalize=True)
                 
                 # Put G back in train mode
