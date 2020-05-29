@@ -70,9 +70,13 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    real_label_val = 1
-    fake_label_val = 0
+    # Real and fake label ranges for label smoothing
+    real_label_low = 0.7
+    real_label_high = 1.2
+    fake_label_low = 0.0
+    fake_label_high = 0.3
 
+    # Keep track of losses and accuracy
     G_losses = []
     D_losses = []
     D_acc = []
@@ -175,8 +179,10 @@ def main():
             labels = labels.to(device)
 
             batch_size = images.size(0)
-            real_label = torch.full((batch_size,), real_label_val, device=device)
-            fake_label = torch.full((batch_size,), fake_label_val, device=device)
+
+            # Real and Fake labels with label smoothing
+            real_label = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
+            fake_label = (fake_label_low - fake_label_high) * torch.rand((batch_size,), device=device) + fake_label_high
 
             real_pred, real_aux = disc(images)
             d_real_loss = (adversarial_loss(real_pred, real_label) + auxiliary_loss(real_aux, labels)) / 2
