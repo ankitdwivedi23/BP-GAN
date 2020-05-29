@@ -29,7 +29,6 @@ def main():
 
     num_classes = opt.num_classes
     noise_dim = opt.latent_dim + opt.num_classes
-    batch_size = opt.batch_size
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -55,7 +54,7 @@ def main():
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
-                                            batch_size=batch_size,
+                                            batch_size=opt.batch_size,
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
@@ -71,47 +70,60 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    real_label = torch.LongTensor(batch_size).to(device)
-    real_label.fill_(1)
-    
-    fake_label = torch.LongTensor(batch_size).to(device)
-    fake_label.fill_(0)
+    real_label_val = 1
+    fake_label_val = 0
 
     G_losses = []
     D_losses = []
     D_acc = []
 
+    def print_labels():
+        for class_name in train_set.classes:
+            print("{} -> {}".format(class_name, train_set.class_to_idx[class_name]))
 
-    def eval_fid(images):
-        output_images_path = os.path.join(opt.output_path, opt.version, "val")
-        os.makedirs(output_images_path, exist_ok=True)
-        print("Saving images generated for validation...")
-        for i in range(images.size(0)):
-            vutils.save_image(images[i, :, :, :], "{}/{}.jpg".format(output_images_path, i))    
+
+
+    def eval_fid(gen_images_path, eval_images_path):        
         print("Calculating FID...")
-        fid = fid_score.calculate_fid_given_paths((output_images_path, val_images_path), opt.batch_size, device)
+        fid = fid_score.calculate_fid_given_paths((gen_images_path, eval_images_path), opt.batch_size, device)
         return fid
 
+    
     def validate():
         val_set = datasets.ImageFolder(root=val_images_path,
-                                transform=transforms.Compose([
-                                    transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                       transform=transforms.Compose([
+                                                 transforms.Resize((opt.img_size, opt.img_size)),
+                                                 transforms.ToTensor()
                             ]))
         
-        noise = torch.randn((len(val_set), opt.latent_dim)).to(device)
-        labels = torch.randint(0, num_classes, (len(val_set),)).to(device)
-        labels_onehot = F.one_hot(labels, num_classes)
+        val_loader = torch.utils.data.DataLoader(val_set,
+                                            batch_size=opt.batch_size,
+                                            shuffle=True,
+                                            num_workers=opt.num_workers)
+        
+        output_images_path = os.path.join(opt.output_path, opt.version, "val")
+        os.makedirs(output_images_path, exist_ok=True)
 
-        noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-        gen_images = gen(noise)
-        fid = eval_fid(gen_images)
+        images_done = 0
+        for _, data in enumerate(val_loader, 0):
+            batch_size = data[0].size(0)
+            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            labels = torch.randint(0, num_classes, (batch_size,)).to(device)
+            labels_onehot = F.one_hot(labels, num_classes)
+
+            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise)
+            for i in range(images_done, images_done + batch_size):
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
+            images_done += batch_size
+        
+        fid = eval_fid(output_images_path, val_images_path)
         print("Validation FID: {}".format(fid))
 
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim))
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -143,6 +155,10 @@ def main():
         plt.ylabel("accuracy")
         plt.savefig(path)
 
+    
+    print("Label to class mapping:")
+    print_labels()
+
     for epoch in range(opt.num_epochs):
         for i, data in enumerate(dataloader, 0):
 
@@ -157,6 +173,10 @@ def main():
             images, labels = data
             images = images.to(device)
             labels = labels.to(device)
+
+            batch_size = images.size(0)
+            real_label = torch.full((batch_size,), real_label_val, device=device)
+            fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
             real_pred, real_aux = disc(images)
             d_real_loss = (adversarial_loss(real_pred, real_label) + auxiliary_loss(real_aux, labels)) / 2
@@ -212,7 +232,7 @@ def main():
                 gen.eval()
                 
                 with torch.no_grad():                
-                    sample_images(6, batches_done)
+                    sample_images(opt.num_sample_images, batches_done)
                 vutils.save_image(gen_images.data[:36], "{}/{}.png".format(output_train_images_path, batches_done), nrow=6, padding=2, normalize=True)
                 
                 # Put G back in train mode

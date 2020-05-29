@@ -38,7 +38,7 @@ class Generator(nn.Module):
     
     def forward(self, z):
         z = z.view(-1, self.dim)
-        z = self.fc1(z)
+        z = self.fc(z)
         z = z.view(-1, 768, 1, 1)
         z = self.conv_layers(z)
         return z
@@ -87,6 +87,7 @@ class Discriminator(nn.Module):
     
     def forward(self, x):
         x = self.conv_layers(x)
+        x=x.view(-1,16*16*512)
         validity = self.sig(self.fc_source(x)) # real or fake score
         class_scores = self.fc_class(x) # logit scores for each class
 
