@@ -38,7 +38,7 @@ class Generator(nn.Module):
     
     def forward(self, z):
         z = z.view(-1, self.dim)
-        z = self.fc1(z)
+        z = self.fc(z)
         z = z.view(-1, 768, 1, 1)
         z = self.conv_layers(z)
         return z
