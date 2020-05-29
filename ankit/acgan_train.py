@@ -228,7 +228,7 @@ def main():
             optimG.zero_grad()
 
             validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_labels))
+            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
 
             g_loss.backward()
             optimG.step()
