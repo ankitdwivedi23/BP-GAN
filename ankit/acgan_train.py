@@ -111,7 +111,7 @@ def main():
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim))
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
