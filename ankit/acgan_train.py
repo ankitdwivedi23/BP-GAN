@@ -71,11 +71,11 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    real_label = torch.LongTensor(batch_size).to(device)
-    real_label.fill_(1)
+    real_label = torch.FloatTensor(batch_size).to(device)
+    real_label.fill_(1.0)
     
-    fake_label = torch.LongTensor(batch_size).to(device)
-    fake_label.fill_(0)
+    fake_label = torch.FloatTensor(batch_size).to(device)
+    fake_label.fill_(0.0)
 
     G_losses = []
     D_losses = []
