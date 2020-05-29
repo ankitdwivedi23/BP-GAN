@@ -232,7 +232,7 @@ def main():
                 gen.eval()
                 
                 with torch.no_grad():                
-                    sample_images(num_images=6, batches_done)
+                    sample_images(opt.num_sample_images, batches_done)
                 vutils.save_image(gen_images.data[:36], "{}/{}.png".format(output_train_images_path, batches_done), nrow=6, padding=2, normalize=True)
                 
                 # Put G back in train mode
