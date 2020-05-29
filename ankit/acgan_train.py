@@ -95,12 +95,24 @@ def main():
                                                  transforms.ToTensor()
                             ]))
         
-        noise = torch.randn((len(val_set), opt.latent_dim)).to(device)
-        labels = torch.randint(0, num_classes, (len(val_set),)).to(device)
-        labels_onehot = F.one_hot(labels, num_classes)
+        val_loader = torch.utils.data.DataLoader(val_set,
+                                            batch_size=opt.batch_size,
+                                            shuffle=True,
+                                            num_workers=opt.num_workers)
+        
+        gen_images = torch.FloatTensor(len(val_set), opt.channels, opt.img_size, opt.img_size).to(device)
 
-        noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-        gen_images = gen(noise)
+        images_done = 0
+        for _, data in enumerate(val_loader, 0):
+            batch_size = data[0].size(0)
+            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            labels = torch.randint(0, num_classes, (batch_size,)).to(device)
+            labels_onehot = F.one_hot(labels, num_classes)
+
+            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            gen_images[images_done: images_done + batch_size, :, :, :] = gen(noise)
+            images_done += batch_size
+        
         fid = eval_fid(gen_images)
         print("Validation FID: {}".format(fid))
 
