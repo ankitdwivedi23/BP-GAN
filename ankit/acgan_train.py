@@ -78,16 +78,12 @@ def main():
     D_acc = []
 
 
-    def eval_fid(images):
-        output_images_path = os.path.join(opt.output_path, opt.version, "val")
-        os.makedirs(output_images_path, exist_ok=True)
-        print("Saving images generated for validation...")
-        for i in range(images.size(0)):
-            vutils.save_image(images[i, :, :, :], "{}/{}.jpg".format(output_images_path, i))    
+    def eval_fid(gen_images_path, eval_images_path):        
         print("Calculating FID...")
-        fid = fid_score.calculate_fid_given_paths((output_images_path, val_images_path), opt.batch_size, device)
+        fid = fid_score.calculate_fid_given_paths((gen_images_path, eval_images_path), opt.batch_size, device)
         return fid
 
+    
     def validate():
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
@@ -100,7 +96,8 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
         
-        gen_images = torch.FloatTensor(len(val_set), opt.channels, opt.img_size, opt.img_size).to(device)
+        output_images_path = os.path.join(opt.output_path, opt.version, "val")
+        os.makedirs(output_images_path, exist_ok=True)
 
         images_done = 0
         for _, data in enumerate(val_loader, 0):
@@ -110,10 +107,12 @@ def main():
             labels_onehot = F.one_hot(labels, num_classes)
 
             noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-            gen_images[images_done: images_done + batch_size, :, :, :] = gen(noise)
+            gen_images = gen(noise)
+            for i in range(images_done, images_done + batch_size):
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
             images_done += batch_size
         
-        fid = eval_fid(gen_images)
+        fid = eval_fid(output_images_path, val_images_path)
         print("Validation FID: {}".format(fid))
 
 
