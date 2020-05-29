@@ -29,7 +29,6 @@ def main():
 
     num_classes = opt.num_classes
     noise_dim = opt.latent_dim + opt.num_classes
-    batch_size = opt.batch_size
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -55,7 +54,7 @@ def main():
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
-                                            batch_size=batch_size,
+                                            batch_size=opt.batch_size,
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
@@ -71,11 +70,8 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    real_label = torch.FloatTensor(batch_size).to(device)
-    real_label.fill_(1.0)
-    
-    fake_label = torch.FloatTensor(batch_size).to(device)
-    fake_label.fill_(0.0)
+    real_label_val = 1
+    fake_label_val = 0
 
     G_losses = []
     D_losses = []
@@ -94,9 +90,9 @@ def main():
 
     def validate():
         val_set = datasets.ImageFolder(root=val_images_path,
-                                transform=transforms.Compose([
-                                    transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                       transform=transforms.Compose([
+                                                 transforms.Resize((opt.img_size, opt.img_size)),
+                                                 transforms.ToTensor()
                             ]))
         
         noise = torch.randn((len(val_set), opt.latent_dim)).to(device)
@@ -157,6 +153,10 @@ def main():
             images, labels = data
             images = images.to(device)
             labels = labels.to(device)
+
+            batch_size = images.size(0)
+            real_label = torch.full((batch_size,), real_label_val, device=device)
+            fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
             real_pred, real_aux = disc(images)
             d_real_loss = (adversarial_loss(real_pred, real_label) + auxiliary_loss(real_aux, labels)) / 2
