@@ -189,7 +189,7 @@ def main():
 
             real_pred, real_aux = disc(images)
             
-            mask = torch.rand((batch_size,)) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= 0.05
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label) + torch.mul(mask, fake_label)
 
@@ -204,7 +204,7 @@ def main():
             gen_images = gen(noise)
             fake_pred, fake_aux = disc(gen_images.detach())
 
-            mask = torch.rand((batch_size,)) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= 0.05
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label)
 
