@@ -96,7 +96,7 @@ def main():
         return fid
 
     
-    def validate():
+    def validate(keep_images=True):
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
                                                  transforms.Resize((opt.img_size, opt.img_size)),
@@ -126,6 +126,9 @@ def main():
         
         fid = eval_fid(output_images_path, val_images_path)
         print("Validation FID: {}".format(fid))
+        if (not keep_images):
+            print("Deleting images generated for validation...")
+            rmtree(output_images_path)
 
 
     def sample_images(num_images, batches_done):
@@ -246,6 +249,7 @@ def main():
 
             batches_done = epoch * len(dataloader) + i
             
+            # Generate and save sample images
             if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
                 # Put G in eval mode
                 gen.eval()
@@ -256,20 +260,33 @@ def main():
                 
                 # Put G back in train mode
                 gen.train()
+            
+        # Save model checkpoint
+        if (epoch !=0 and epoch % opt.checkpoint_epochs == 0):
+            print("Checkpoint at epoch {}".format(epoch))
+            print("Saving generator model...")
+            torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
+            print("Saving G & D loss plot...")
+            save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
+            print("Saving D accuracy plot...")
+            save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
+            print("Validating model...")
+            validate(keep_images=False)
+
     
-    print("Saving generator model...")
+    print("Saving final generator model...")
     torch.save(gen.state_dict(), os.path.join(output_model_path, "model.pt"))
     print("Done!")
 
-    print("Saving G & D loss plot...")
+    print("Saving final G & D loss plot...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
     print("Done!")
 
-    print("Saving D accuracy plot...")
+    print("Saving final D accuracy plot...")
     save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot.png"))
     print("Done!")
 
-    print("Validating model...")
+    print("Validating final model...")
     validate()
 
 if __name__ == '__main__':
