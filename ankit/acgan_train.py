@@ -19,7 +19,17 @@ import util
 from models import acgan
 from eval import fid_score
 
+def set_random_seed(seed=23):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
 def main():
+
+    set_random_seed()
 
     # Arguments
     opt = args.get_setup_args()
@@ -70,19 +80,19 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    # Real and fake label ranges for label smoothing
-    real_label_low = 0.7
-    real_label_high = 1.2
-    fake_label_low = 0.0
-    fake_label_high = 0.3
+    real_label_val = 1
+    real_label_smooth_val = 0.9
+    fake_label_val = 0
 
     # Probability of adding label noise during discriminator training
     label_noise_prob = 0.05
 
-    # Keep track of losses and accuracy
+    # Keep track of losses, accuracy, FID
     G_losses = []
     D_losses = []
     D_acc = []
+    FIDs = []
+    val_epochs = []
 
     def print_labels():
         for class_name in train_set.classes:
@@ -125,10 +135,10 @@ def main():
             images_done += batch_size
         
         fid = eval_fid(output_images_path, val_images_path)
-        print("Validation FID: {}".format(fid))
         if (not keep_images):
             print("Deleting images generated for validation...")
             rmtree(output_images_path)
+        return fid
 
 
     def sample_images(num_images, batches_done):
@@ -164,6 +174,16 @@ def main():
         plt.xlabel("iterations")
         plt.ylabel("accuracy")
         plt.savefig(path)
+    
+    def save_fid_plot(FIDs, epochs, path):
+        #N = len(FIDs)
+        plt.figure(figsize=(10,5))
+        plt.title("FID on Validation Set")
+        plt.plot(epochs, FIDs)
+        plt.xlabel("epochs")
+        plt.ylabel("FID")
+        #plt.xticks([i * 49 for i in range(1, N+1)])    
+        plt.savefig(path)
 
     
     print("Label to class mapping:")
@@ -178,9 +198,9 @@ def main():
 
             batch_size = images.size(0)
 
-            # Real and Fake labels with label smoothing
-            real_label = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
-            fake_label = (fake_label_low - fake_label_high) * torch.rand((batch_size,), device=device) + fake_label_high
+            real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            real_label = torch.full((batch_size,), real_label_val, device=device)
+            fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
             ############################
             # Train Discriminator
@@ -192,9 +212,9 @@ def main():
 
             real_pred, real_aux = disc(images)
             
-            mask = torch.rand((batch_size,), device=device) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, real_label) + torch.mul(mask, fake_label)
+            noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
             d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
 
@@ -207,9 +227,9 @@ def main():
             gen_images = gen(noise)
             fake_pred, fake_aux = disc(gen_images.detach())
 
-            mask = torch.rand((batch_size,), device=device) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label)
+            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
             d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
 
@@ -271,7 +291,12 @@ def main():
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
             print("Validating model...")
-            validate(keep_images=False)
+            fid = validate(keep_images=False)
+            print("Validation FID: {}".format(fid))
+            FIDs.append(fid)
+            val_epochs.append(epoch)
+            print("Saving FID plot...")
+            save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
 
     
     print("Saving final generator model...")
@@ -287,7 +312,11 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    validate()
+    fid = validate()
+    FIDs.append(fid)
+    val_epochs.append(epoch)
+    print("Saving final FID plot...")
+    save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot"))
 
 if __name__ == '__main__':
     main()
