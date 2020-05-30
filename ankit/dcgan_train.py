@@ -189,7 +189,7 @@ def main():
 
             batches_done = epoch * len(dataloader) + i
             
-            if (batches_done % opt.eval_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
+            if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
                 # Put G in eval mode
                 netG.eval()
                 
