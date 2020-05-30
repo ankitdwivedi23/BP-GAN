@@ -246,6 +246,7 @@ def main():
 
             batches_done = epoch * len(dataloader) + i
             
+            # Generate and save sample images
             if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
                 # Put G in eval mode
                 gen.eval()
@@ -256,8 +257,14 @@ def main():
                 
                 # Put G back in train mode
                 gen.train()
+            
+            # Save model checkpoint
+            if (epoch !=0 and epoch % opt.checkpoint_epochs == 0):
+                print("Saving generator model checkpoint...")
+                torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
+
     
-    print("Saving generator model...")
+    print("Saving final generator model...")
     torch.save(gen.state_dict(), os.path.join(output_model_path, "model.pt"))
     print("Done!")
 

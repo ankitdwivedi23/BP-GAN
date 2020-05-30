@@ -18,4 +18,5 @@ def get_setup_args():
     parser.add_argument("--output_path", type=str, default="results", help="path to directory for storing model output")
     parser.add_argument("--num_classes", type=int, default=6, help="number of classes for dataset")
     parser.add_argument("--num_sample_images", type=int, default=6, help="number of sample images per class")
+    parser.add_argument("--checkpoint_epochs", type=int, default=50, help="number of epochs between model checkpoints")
     return parser.parse_args()
