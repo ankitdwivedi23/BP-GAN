@@ -260,19 +260,24 @@ def main():
             
             # Save model checkpoint
             if (epoch !=0 and epoch % opt.checkpoint_epochs == 0):
-                print("Saving generator model checkpoint...")
+                print("Checkpoint at epoch {}".format(epoch))
+                print("Saving generator model...")
                 torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
+                print("Saving G & D loss plot...")
+                save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
+                print("Saving D accuracy plot...")
+                save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
 
     
     print("Saving final generator model...")
     torch.save(gen.state_dict(), os.path.join(output_model_path, "model.pt"))
     print("Done!")
 
-    print("Saving G & D loss plot...")
+    print("Saving final G & D loss plot...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
     print("Done!")
 
-    print("Saving D accuracy plot...")
+    print("Saving final D accuracy plot...")
     save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot.png"))
     print("Done!")
 
