@@ -144,7 +144,7 @@ def main():
         labels_onehot = F.one_hot(labels, num_classes)
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
-        vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_classes, padding=2, normalize=True)
+        vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     
     def save_loss_plot(path):
