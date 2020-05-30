@@ -30,7 +30,7 @@ def set_random_seed(seed=23):
 def main():
 
     set_random_seed()
-    
+
     # Arguments
     opt = args.get_setup_args()
 
@@ -87,10 +87,12 @@ def main():
     # Probability of adding label noise during discriminator training
     label_noise_prob = 0.05
 
-    # Keep track of losses and accuracy
+    # Keep track of losses, accuracy, FID
     G_losses = []
     D_losses = []
     D_acc = []
+    FIDs = []
+    val_epochs = []
 
     def print_labels():
         for class_name in train_set.classes:
@@ -133,10 +135,10 @@ def main():
             images_done += batch_size
         
         fid = eval_fid(output_images_path, val_images_path)
-        print("Validation FID: {}".format(fid))
         if (not keep_images):
             print("Deleting images generated for validation...")
             rmtree(output_images_path)
+        return fid
 
 
     def sample_images(num_images, batches_done):
@@ -171,6 +173,16 @@ def main():
         plt.plot(D_acc)
         plt.xlabel("iterations")
         plt.ylabel("accuracy")
+        plt.savefig(path)
+    
+    def save_fid_plot(FIDs, epochs, path):
+        #N = len(FIDs)
+        plt.figure(figsize=(10,5))
+        plt.title("FID on Validation Set")
+        plt.plot(epochs, FIDs)
+        plt.xlabel("epochs")
+        plt.ylabel("FID")
+        #plt.xticks([i * 49 for i in range(1, N+1)])    
         plt.savefig(path)
 
     
@@ -279,7 +291,12 @@ def main():
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
             print("Validating model...")
-            validate(keep_images=False)
+            fid = validate(keep_images=False)
+            print("Validation FID: {}".format(fid))
+            FIDs.append(fid)
+            val_epochs.append(epoch)
+            print("Saving FID plot...")
+            save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
 
     
     print("Saving final generator model...")
@@ -295,7 +312,11 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    validate()
+    fid = validate()
+    FIDs.append(fid)
+    val_epochs.append(epoch)
+    print("Saving final FID plot...")
+    save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot"))
 
 if __name__ == '__main__':
     main()
