@@ -70,11 +70,9 @@ def main():
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
-    # Real and fake label ranges for label smoothing
-    real_label_low = 0.7
-    real_label_high = 1.2
-    fake_label_low = 0.0
-    fake_label_high = 0.3
+    real_label_val = 1
+    real_label_smooth_val = 0.9
+    fake_label_val = 0
 
     # Probability of adding label noise during discriminator training
     label_noise_prob = 0.05
@@ -178,9 +176,9 @@ def main():
 
             batch_size = images.size(0)
 
-            # Real and Fake labels with label smoothing
-            real_label = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
-            fake_label = (fake_label_low - fake_label_high) * torch.rand((batch_size,), device=device) + fake_label_high
+            real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            real_label = torch.full((batch_size,), real_label_val, device=device)
+            fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
             ############################
             # Train Discriminator
@@ -192,9 +190,9 @@ def main():
 
             real_pred, real_aux = disc(images)
             
-            mask = torch.rand((batch_size,), device=device) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, real_label) + torch.mul(mask, fake_label)
+            noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
             d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
 
@@ -207,9 +205,9 @@ def main():
             gen_images = gen(noise)
             fake_pred, fake_aux = disc(gen_images.detach())
 
-            mask = torch.rand((batch_size,), device=device) <= 0.05
+            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label)
+            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
             d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
 
