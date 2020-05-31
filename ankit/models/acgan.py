@@ -3,12 +3,13 @@ import torch.nn as nn
 
 class Generator(nn.Module):
 
-    def __init__(self, dim):
+    def __init__(self, latent_dim, num_classes):
         super(Generator, self).__init__()
         
-        self.dim = dim
+        self.latent_dim = latent_dim
 
-        self.fc = nn.Linear(dim, 768)
+        self.label_emb = nn.Embedding(num_classes, latent_dim)
+        self.fc = nn.Linear(latent_dim, 768)
 
         self.conv_layers = nn.Sequential(
             # ConvT-BN-ReLU-1 (Input => 1 * 1 * 768, Output => 4 * 4 * 384)
@@ -36,8 +37,8 @@ class Generator(nn.Module):
             nn.Tanh()
         )
     
-    def forward(self, z):
-        z = z.view(-1, self.dim)
+    def forward(self, noise, labels):
+        z = torch.mul(self.label_emb(labels), noise)
         z = self.fc(z)
         z = z.view(-1, 768, 1, 1)
         z = self.conv_layers(z)

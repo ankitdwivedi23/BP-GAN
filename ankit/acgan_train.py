@@ -38,7 +38,7 @@ def main():
     device, gpu_ids = util.get_available_devices()
 
     num_classes = opt.num_classes
-    noise_dim = opt.latent_dim + opt.num_classes
+    #noise_dim = opt.latent_dim + opt.num_classes
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -68,7 +68,7 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
-    gen = acgan.Generator(noise_dim).to(device)
+    gen = acgan.Generator(opt.latent_dim, num_classes).to(device)
     disc = acgan.Discriminator(num_classes).to(device)
 
     gen.apply(weights_init)
@@ -81,7 +81,8 @@ def main():
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
-    real_label_smooth_val = 0.9
+    real_label_low = 0.75
+    real_label_high = 1.0
     fake_label_val = 0
 
     # Probability of adding label noise during discriminator training
@@ -143,7 +144,7 @@ def main():
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+        noise = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -151,9 +152,9 @@ def main():
             for j in range(num_images):
                 labels[i*num_images + j] = i
         
-        labels_onehot = F.one_hot(labels, num_classes)
-        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
-        sample_imgs = gen(z)
+        #labels_onehot = F.one_hot(labels, num_classes)
+        #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)        
+        sample_imgs = gen(noise, labels)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     
@@ -198,7 +199,7 @@ def main():
 
             batch_size = images.size(0)
 
-            real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
             real_label = torch.full((batch_size,), real_label_val, device=device)
             fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
@@ -221,10 +222,10 @@ def main():
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            #gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
 
-            noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise)
+            #noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise, gen_class_labels)
             fake_pred, fake_aux = disc(gen_images.detach())
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
