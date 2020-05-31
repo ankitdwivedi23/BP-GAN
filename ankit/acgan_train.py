@@ -286,7 +286,7 @@ def main():
                 gen.train()
             
         # Save model checkpoint
-        if (epoch !=0 and epoch % opt.checkpoint_epochs == 0):
+        if (epoch != opt.num_epochs - 1 and (epoch + 1) % opt.checkpoint_epochs == 0):
             print("Checkpoint at epoch {}".format(epoch))
             print("Saving generator model...")
             torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
