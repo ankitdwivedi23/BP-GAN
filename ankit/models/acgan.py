@@ -29,7 +29,8 @@ class Generator(nn.Module):
             nn.BatchNorm2d(48),
             nn.LeakyReLU(0.2, inplace=True),
             # ConvT-Tanh (Input => 32 * 32 * 48, Output => 64 * 64 * 3)
-            nn.ConvTranspose2d(in_channels=48, out_channels=3, kernel_size=4, stride=2, padding=1)
+            nn.ConvTranspose2d(in_channels=48, out_channels=3, kernel_size=4, stride=2, padding=1),
+            nn.Tanh()
         )
     
     def forward(self, noise, labels):
