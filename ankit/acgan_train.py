@@ -122,6 +122,14 @@ def main():
         output_images_path = os.path.join(opt.output_path, opt.version, "val")
         os.makedirs(output_images_path, exist_ok=True)
 
+        output_source_images_path = val_images_path + "_" + str(opt.img_size)
+
+        source_images_available = True
+
+        if (not os.path.exists(output_source_images_path)):
+            os.makedirs(output_source_images_path)
+            source_images_available = False
+
         images_done = 0
         for _, data in enumerate(val_loader, 0):
             batch_size = data[0].size(0)
@@ -132,10 +140,12 @@ def main():
             noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
-                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))       
+                if (not source_images_available):
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i))     
             images_done += batch_size
         
-        fid = eval_fid(output_images_path, val_images_path)
+        fid = eval_fid(output_images_path, output_source_images_path)
         if (not keep_images):
             print("Deleting images generated for validation...")
             rmtree(output_images_path)
@@ -294,13 +304,17 @@ def main():
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
+            
             print("Validating model...")
-            fid = validate(keep_images=False)
+            gen.eval()
+            with torch.no_grad():
+                fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
+            gen.train()
 
     
     print("Saving final generator model...")
@@ -316,7 +330,9 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    fid = validate()
+    gen.eval()    
+    with torch.no_grad():
+        fid = validate()
     print("Final Validation FID: {}".format(fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
