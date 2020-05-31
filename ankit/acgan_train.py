@@ -127,10 +127,10 @@ def main():
             batch_size = data[0].size(0)
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            labels_onehot = F.one_hot(labels, num_classes)
+            #labels_onehot = F.one_hot(labels, num_classes)
 
-            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise)
+            #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise, labels)
             for i in range(images_done, images_done + batch_size):
                 vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
             images_done += batch_size
