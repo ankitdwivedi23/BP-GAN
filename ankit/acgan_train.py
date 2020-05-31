@@ -167,6 +167,7 @@ def main():
         plt.ylabel("Loss")
         plt.legend()
         plt.savefig(path)
+        plt.close()
 
     def save_acc_plot(path):
         plt.figure(figsize=(10,5))
@@ -175,6 +176,7 @@ def main():
         plt.xlabel("iterations")
         plt.ylabel("accuracy")
         plt.savefig(path)
+        plt.close()
     
     def save_fid_plot(FIDs, epochs, path):
         #N = len(FIDs)
@@ -185,6 +187,7 @@ def main():
         plt.ylabel("FID")
         #plt.xticks([i * 49 for i in range(1, N+1)])    
         plt.savefig(path)
+        plt.close()
 
     
     print("Label to class mapping:")
@@ -314,6 +317,7 @@ def main():
 
     print("Validating final model...")
     fid = validate()
+    print("Final Validation FID: {}".format(fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
     print("Saving final FID plot...")
