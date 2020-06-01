@@ -58,12 +58,12 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()        
         
         self.conv1_1 = nn.Sequential(
-            nn.Conv2d(num_channels, ndf/2, 4, 2, 1),
+            nn.Conv2d(num_channels, ndf//2, 4, 2, 1),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
         self.conv1_2 = nn.Sequential(
-            nn.Conv2d(num_classes, ndf/2, 4, 2, 1),
+            nn.Conv2d(num_classes, ndf//2, 4, 2, 1),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
