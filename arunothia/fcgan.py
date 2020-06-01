@@ -211,13 +211,13 @@ def main():
 
             optimD.zero_grad()
 
-            real_pred, real_aux = disc(images)
+            real_pred, real_aux, real_features_1, real_features_2 = disc(images)
             
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            d_real_loss = (adversarial_loss(real_pred, noisy_label) + adversarial_loss(real_features_1, noisy_label) + adversarial_loss(real_features_2, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 4
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -226,14 +226,14 @@ def main():
 
             noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise)
-            fake_pred, fake_aux = disc(gen_images.detach())
+            fake_pred, fake_aux, fake_features_1, fake_features_2 = disc(gen_images.detach())
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
             
             c_fake = torch.full(gen_class_labels.shape, c_fake_label, device=device, dtype=torch.long)
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
+            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + adversarial_loss(fake_features_1, noisy_label) + adversarial_loss(fake_features_2, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 4
 
             # Total discriminator loss
             d_loss = (d_real_loss + d_fake_loss) / 2

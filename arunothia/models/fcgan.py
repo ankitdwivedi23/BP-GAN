@@ -52,7 +52,7 @@ class Discriminator(nn.Module):
     def __init__(self, num_classes):
         super(Discriminator, self).__init__()
 
-        self.conv_layers = nn.Sequential(
+        self.conv_layers_1 = nn.Sequential(
             # Conv-LeakyReLU-Dropout (Input => 256 * 256 * 3, Output => 128 * 128 * 16)
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
@@ -61,7 +61,10 @@ class Discriminator(nn.Module):
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(0.5)
+        )
+
+        self.conv_layers_2 = nn.Sequential(
             # Conv-BN-LeakyReLU-Dropout-2 (Input => 64 * 64 * 32, Output => 32 * 32 * 64)
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(64),
@@ -71,7 +74,10 @@ class Discriminator(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(0.5)
+        )
+
+        self.conv_layers_3 = nn.Sequential(
             # Conv-BN-LeakyReLU-Dropout-4 (Input => 32 * 32 * 128, Output => 16 * 16 * 256)
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(256),
@@ -87,14 +93,21 @@ class Discriminator(nn.Module):
         self.fc_source=nn.Linear(16*16*512,1)
         self.fc_class=nn.Linear(16*16*512, num_classes+1)
         self.sig=nn.Sigmoid()
+
+        self.fc_feature_1(64*64*32, 1)
+        self.fc_feature_2(32*32*128, 1)
     
     def forward(self, x):
-        x = self.conv_layers(x)
-        x=x.view(-1,16*16*512)
+        x1 = self.conv_layers_1(x)
+        x2 = self.conv_layers_2(x1)
+        x3 = self.conv_layers_3(x2)
+        x = x3.view(-1,16*16*512)
         validity = self.sig(self.fc_source(x)) # real or fake score
         class_scores = self.fc_class(x) # logit scores for each class
+        features_1 = self.sig(self.fc_source(x1))
+        features_2 = self.sig(self.fc_source(x2))
 
-        return validity, class_scores
+        return validity, class_scores, features_1, features_2
 
 
 
