@@ -132,7 +132,8 @@ def main():
 
         images_done = 0
         for _, data in enumerate(val_loader, 0):
-            batch_size = data[0].size(0)
+            images, labels = data
+            batch_size = images.size(0)
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             labels_onehot = F.one_hot(labels, num_classes)
