@@ -286,8 +286,8 @@ def main():
 
             # Output training stats
             if i % opt.print_every == 0:
-                print("[Epoch %d/%d] [Batch %d/%d] [D loss: %.4f, acc:  %d%%] [G loss: %.4f]"
-                % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), 100 * d_acc, g_loss.item())
+                print("[Epoch %d/%d] [Batch %d/%d] [D loss: %.4f] [G loss: %.4f]"
+                % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
                 )
 
             batches_done = epoch * len(dataloader) + i
