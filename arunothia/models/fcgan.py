@@ -50,12 +50,12 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.conv_layers = nn.Sequential(
-            # Conv-LeakyReLU-Dropout (Input => 128 * 128 * 3, Output => 64 * 64 * 16)
+            # Conv-LeakyReLU-Dropout (Input => 256 * 256 * 3, Output => 128 * 128 * 16)
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
-            # Conv-BN-LeakyReLU-Dropout-1 (Input => 64 * 64 * 16, Output => 64 * 64 * 32)
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
+            # Conv-BN-LeakyReLU-Dropout-1 (Input => 128 * 128 * 16, Output => 64 * 64 * 32)
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
