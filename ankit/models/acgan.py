@@ -14,23 +14,23 @@ class Generator(nn.Module):
             # ConvT-BN-ReLU-1 (Input => 1 * 1 * 768, Output => 4 * 4 * 384)
             nn.ConvTranspose2d(in_channels=768, out_channels=384, kernel_size=4, stride=1),
             nn.BatchNorm2d(384),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.ReLU(inplace=True),
             # ConvT-BN-ReLU-2 (Input => 4 * 4 * 384, Output => 8 * 8 * 256)
             nn.ConvTranspose2d(in_channels=384, out_channels=256, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.ReLU(inplace=True),
             # ConvT-BN-ReLU-3 (Input => 8 * 8 * 256, Output => 16 * 16 * 192)
             nn.ConvTranspose2d(in_channels=256, out_channels=192, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(192),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.ReLU(inplace=True),
             # ConvT-BN-ReLU-4 (Input => 16 * 16 * 192, Output => 32 * 32 * 96)
             nn.ConvTranspose2d(in_channels=192, out_channels=96, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(96),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.ReLU(inplace=True),
             # ConvT-BN-ReLU-5 (Input => 32 * 32 * 96, Output => 64 * 64 * 48)
             nn.ConvTranspose2d(in_channels=96, out_channels=48, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(48),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.ReLU(inplace=True),
             # ConvT-Tanh (Input => 64 * 64 * 48, Output => 128 * 128 * 3)
             nn.ConvTranspose2d(in_channels=48, out_channels=3, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
