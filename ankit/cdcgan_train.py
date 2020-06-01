@@ -132,6 +132,14 @@ def main():
         output_images_path = os.path.join(opt.output_path, opt.version, "val")
         os.makedirs(output_images_path, exist_ok=True)
 
+        output_source_images_path = val_images_path + "_" + str(opt.img_size)
+
+        source_images_available = True
+
+        if (not os.path.exists(output_source_images_path)):
+            os.makedirs(output_source_images_path)
+            source_images_available = False
+
         images_done = 0
         for _, data in enumerate(val_loader, 0):
             batch_size = data[0].size(0)
@@ -143,10 +151,12 @@ def main():
             #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise, labels_onehot)
             for i in range(images_done, images_done + batch_size):
-                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))
+                if (not source_images_available):
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i))          
             images_done += batch_size
         
-        fid = eval_fid(output_images_path, val_images_path)
+        fid = eval_fid(output_images_path, output_source_images_path)
         if (not keep_images):
             print("Deleting images generated for validation...")
             rmtree(output_images_path)
@@ -238,7 +248,8 @@ def main():
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            #gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            gen_class_labels_onehot = onehot[gen_class_labels]
             gen_class_labels_fill = fill[gen_class_labels]
 
             #noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
