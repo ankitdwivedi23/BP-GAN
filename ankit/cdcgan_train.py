@@ -46,7 +46,7 @@ def main():
     # label preprocess
     label_vals = [i for i in range(num_classes)]
     onehot = torch.zeros(num_classes, num_classes).to(device)
-    onehot = onehot.scatter_(1, torch.LongTensor(label_vals, device=device).view(num_classes, 1), 1).view(num_classes, num_classes, 1, 1)
+    onehot = onehot.scatter_(1, torch.LongTensor(label_vals).view(num_classes, 1).to(device), 1).view(num_classes, num_classes, 1, 1)
     fill = torch.zeros([num_classes, num_classes, opt.img_size, opt.img_size]).to(device)
     for i in range(num_classes):
         fill[i, i, :, :] = 1
