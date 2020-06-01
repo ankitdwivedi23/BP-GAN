@@ -90,9 +90,10 @@ class Discriminator(nn.Module):
             nn.Dropout(0.5)
         )
 
-        self.fc_source=nn.Linear(16*16*512,1)
-        self.fc_class=nn.Linear(16*16*512, num_classes+1)
+        #self.fc_source=nn.Linear(16*16*512,1)
+        #self.fc_class=nn.Linear(16*16*512, num_classes+1)
         self.sig=nn.Sigmoid()
+        self.tanh=nn.Tanh()
 
         self.fc_feature_1 = nn.Linear(64*64*32, 1)
         self.fc_feature_2 = nn.Linear(32*32*128, 1)
@@ -104,8 +105,10 @@ class Discriminator(nn.Module):
         x = x3.view(-1,16*16*512)
         validity = self.sig(self.fc_source(x)) # real or fake score
         class_scores = self.fc_class(x) # logit scores for each class
-        features_1 = self.sig(self.fc_feature_1(x1.view(-1, 64*64*32)))
-        features_2 = self.sig(self.fc_feature_2(x2.view(-1, 32*32*128)))
+        #features_1 = self.sig(self.fc_feature_1(x1.view(-1, 64*64*32)))
+        #features_2 = self.sig(self.fc_feature_2(x2.view(-1, 32*32*128)))
+        features_1 = self.tanh(x1)
+        features_2 = self.tanh(x2)
 
         return validity, class_scores, features_1, features_2
 

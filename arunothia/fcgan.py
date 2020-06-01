@@ -186,6 +186,9 @@ def main():
         #plt.xticks([i * 49 for i in range(1, N+1)])    
         plt.savefig(path)
 
+    def expectation_loss(real_feature, fake_feature):
+        return torch.norm(real_feature - fake_feature)
+
     
     print("Label to class mapping:")
     print_labels()
@@ -217,7 +220,7 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + adversarial_loss(real_features_1, noisy_label) + adversarial_loss(real_features_2, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 4
+            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -233,7 +236,7 @@ def main():
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
             
             c_fake = torch.full(gen_class_labels.shape, c_fake_label, device=device, dtype=torch.long)
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + adversarial_loss(fake_features_1, noisy_label) + adversarial_loss(fake_features_2, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 4
+            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
 
             # Total discriminator loss
             d_loss = (d_real_loss + d_fake_loss) / 2
@@ -253,7 +256,7 @@ def main():
             optimG.zero_grad()
 
             validity, aux_scores, gen_features_1, gen_features_2 = disc(gen_images)
-            g_loss = 0.25 * (adversarial_loss(validity, real_label) + adversarial_loss(gen_features_1, real_label) + adversarial_loss(gen_features_2, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
+            g_loss = 0.25 * (adversarial_loss(validity, real_label) + expectation_loss(gen_features_1, real_features_1) + adversarial_loss(gen_features_2, real_features_2) + auxiliary_loss(aux_scores, gen_class_labels))
 
             g_loss.backward()
             optimG.step()
