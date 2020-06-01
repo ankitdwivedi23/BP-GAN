@@ -243,7 +243,7 @@ def main():
 
             #noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise, gen_class_labels_onehot)
-            fake_pred = disc(gen_images.detach(), gen_class_labels_fill_).view(-1)
+            fake_pred = disc(gen_images.detach(), gen_class_labels_fill).view(-1)
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
