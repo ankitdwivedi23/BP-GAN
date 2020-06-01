@@ -82,7 +82,9 @@ def main():
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
-    real_label_smooth_val = 0.9
+    #real_label_smooth_val = 0.9
+    real_label_low = 0.75
+    real_label_high = 1.0
     fake_label_val = 0
     c_fake_label = opt.num_classes
 
@@ -205,7 +207,8 @@ def main():
 
             batch_size = images.size(0)
 
-            real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            #real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
             real_label = torch.full((batch_size,), real_label_val, device=device)
             fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
