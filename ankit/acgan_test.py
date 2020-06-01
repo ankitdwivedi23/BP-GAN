@@ -2,6 +2,7 @@ import os
 import random
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
@@ -35,6 +36,7 @@ def main():
     opt = args.get_setup_args()
 
     num_classes = opt.num_classes
+    noise_dim = opt.latent_dim + opt.num_classes
 
     def eval_fid(gen_images_path, eval_images_path):        
         print("Calculating FID...")
@@ -70,10 +72,10 @@ def main():
             batch_size = images.size(0)
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            #labels_onehot = F.one_hot(labels, num_classes)
+            labels_onehot = F.one_hot(labels, num_classes)
 
-            #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise, labels)
+            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
                 vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_gen_images_path, i))
                 if (not source_images_available):
@@ -90,7 +92,7 @@ def main():
     val_images_path = os.path.join(opt.data_path, "val")
     model_path = os.path.join(opt.output_path, opt.version)
 
-    gen = acgan.Generator(opt.latent_dim, num_classes).to(device)
+    gen = acgan.Generator(noise_dim).to(device)
     gen.load_state_dict(torch.load(os.path.join(model_path, opt.model_file)))
     gen.eval()
 
