@@ -45,7 +45,7 @@ class Generator(nn.Module):
         y = self.convt1_2(label)
         x = torch.cat([x, y], 1)
         x = self.conv_layers(x)
-        
+
         return x
 
 
@@ -86,8 +86,8 @@ class Discriminator(nn.Module):
             nn.Dropout(0.5)
         )
 
-        self.fc_source=nn.Linear(16*16*512,1)
-        self.fc_class=nn.Linear(16*16*512, num_classes)
+        self.fc_source=nn.Linear(8*8*512,1)
+        self.fc_class=nn.Linear(8*8*512, num_classes)
         self.sig=nn.Sigmoid()
     
     def forward(self, x):
