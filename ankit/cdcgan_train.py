@@ -143,7 +143,7 @@ def main():
         images_done = 0
         for _, data in enumerate(val_loader, 0):
             batch_size = data[0].size(0)
-            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             #labels_onehot = F.one_hot(labels, num_classes)
             labels_onehot = onehot[labels]
@@ -165,7 +165,7 @@ def main():
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -246,7 +246,7 @@ def main():
             d_real_loss = adversarial_loss(real_pred, noisy_label)
 
             # Train with fake batch
-            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             #gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
             gen_class_labels_onehot = onehot[gen_class_labels]
