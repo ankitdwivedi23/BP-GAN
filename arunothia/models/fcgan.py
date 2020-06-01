@@ -95,7 +95,7 @@ class Discriminator(nn.Module):
         self.sig=nn.Sigmoid()
 
         self.fc_feature_1 = nn.Linear(64, 1)
-        self.fc_feature_2 = nn.Linear(64*32*32*128, 1)
+        self.fc_feature_2 = nn.Linear(32, 1)
     
     def forward(self, x):
         x1 = self.conv_layers_1(x)
