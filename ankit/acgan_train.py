@@ -256,6 +256,9 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
+            print("Gen images shape:")
+            print(gen_images.shape)
+
             print("fake pred shape:")
             print(fake_pred.shape)
 
