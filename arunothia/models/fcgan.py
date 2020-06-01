@@ -33,7 +33,7 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             # ConvT-Tanh (Input => 64 * 64 * 48, Output => 128 * 128 * 3)
             nn.ConvTranspose2d(in_channels=48, out_channels=3, kernel_size=4, stride=2, padding=1),
-            nn.Tanh()
+            nn.Tanh(),
             # ConvT-Tanh (Input => 128 * 128 * 3, Output => 256 * 256 * 3)
             nn.ConvTranspose2d(in_channels=3, out_channels=3, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
