@@ -187,7 +187,9 @@ def main():
         plt.savefig(path)
 
     def expectation_loss(real_feature, fake_feature):
-        return torch.norm(real_feature - fake_feature)
+        norm = torch.norm(real_feature - fake_feature)
+        total = torch.abs(norm).sum()
+        return norm/total
 
     
     print("Label to class mapping:")
