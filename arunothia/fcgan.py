@@ -264,7 +264,7 @@ def main():
             r_f1 = real_features.clone().detach()
 
             validity, aux_scores, gen_features = disc(gen_images)
-            g_loss = 0.25 * (adversarial_loss(validity, real_label) + expectation_loss(gen_features, r_f1) + auxiliary_loss(aux_scores, gen_class_labels))
+            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels)) # + expectation_loss(gen_features, r_f1)
 
             g_loss.backward()
             optimG.step()
