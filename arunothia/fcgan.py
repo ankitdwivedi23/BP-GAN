@@ -76,7 +76,7 @@ def main():
 
     optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
     #optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-    optimD = optim.SGD(disc.parameters(), lr=optim.lr_sgd)
+    optimD = optim.SGD(disc.parameters(), lr=opt.lr_sgd)
 
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
