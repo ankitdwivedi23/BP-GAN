@@ -38,7 +38,11 @@ def main():
     device, gpu_ids = util.get_available_devices()
 
     num_classes = opt.num_classes
-    noise_dim = opt.latent_dim + opt.num_classes
+
+    # label preprocess
+    label_vals = [i for i in range(num_classes)]
+    onehot = torch.zeros(num_classes, num_classes).to(device)
+    onehot = onehot.scatter_(1, torch.LongTensor(label_vals).view(num_classes, 1).to(device), 1).view(num_classes, num_classes, 1, 1)
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -68,7 +72,7 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
-    gen = acgan.Generator(noise_dim).to(device)
+    gen = acgan.Generator(opt.latent_dim, num_classes).to(device)
     disc = acgan.Discriminator(num_classes).to(device)
 
     gen.apply(weights_init)
@@ -134,12 +138,13 @@ def main():
         for _, data in enumerate(val_loader, 0):
             images, labels = data
             batch_size = images.size(0)
-            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            labels_onehot = F.one_hot(labels, num_classes)
+            #labels_onehot = F.one_hot(labels, num_classes)
+            labels_onehot = onehot[labels]
 
-            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise)
+            #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise, labels_onehot)
             for i in range(images_done, images_done + batch_size):
                 vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))       
                 if (not source_images_available):
@@ -155,7 +160,7 @@ def main():
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -163,9 +168,10 @@ def main():
             for j in range(num_images):
                 labels[i*num_images + j] = i
         
-        labels_onehot = F.one_hot(labels, num_classes)
-        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
-        sample_imgs = gen(z)
+        #labels_onehot = F.one_hot(labels, num_classes)
+        labels_onehot = onehot[labels]
+        #z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
+        sample_imgs = gen(z, labels_onehot)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     
@@ -234,12 +240,13 @@ def main():
             d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
 
             # Train with fake batch
-            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
+            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            #gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            gen_class_labels_onehot = onehot[gen_class_labels]
 
-            noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise)
+            #noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
+            gen_images = gen(noise, gen_class_labels_onehot)
             fake_pred, fake_aux = disc(gen_images.detach())
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
