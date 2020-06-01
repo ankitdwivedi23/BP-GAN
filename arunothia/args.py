@@ -2,7 +2,7 @@ import argparse
 
 def get_setup_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", type=str, help="model name or version")
+    parser.add_argument("--version", type=str, default="fcgan", help="model name or version")
     parser.add_argument("--num_epochs", type=int, default=50, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
     parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")

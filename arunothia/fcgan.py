@@ -83,7 +83,7 @@ def main():
     real_label_val = 1
     real_label_smooth_val = 0.9
     fake_label_val = 0
-    c_fake_label = opt.n_classes
+    c_fake_label = opt.num_classes
 
     # Probability of adding label noise during discriminator training
     label_noise_prob = 0.05
