@@ -32,7 +32,7 @@ class Generator(nn.Module):
 
         self.convt4 = nn.Sequential(
             nn.ConvTranspose2d(ngf*2, ngf, 4, 2, 1),
-            nn.BatchNorm2d(ngf*4),
+            nn.BatchNorm2d(ngf),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
