@@ -236,9 +236,6 @@ def main():
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
-            
-            print("real pred shape:")
-            print(real_pred.shape)
 
             d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
 
@@ -255,12 +252,6 @@ def main():
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
-
-            print("Gen images shape:")
-            print(gen_images.shape)
-
-            print("fake pred shape:")
-            print(fake_pred.shape)
 
             d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
 
