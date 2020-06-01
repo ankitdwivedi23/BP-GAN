@@ -255,8 +255,8 @@ def main():
 
             optimG.zero_grad()
 
-            r_f1 = real_features_1.copy()
-            r_f2 = real_features_2.copy()
+            r_f1 = real_features_1.clone().detach()
+            r_f2 = real_features_2.clone().detach()
 
             validity, aux_scores, gen_features_1, gen_features_2 = disc(gen_images)
             g_loss = 0.25 * (adversarial_loss(validity, real_label) + expectation_loss(gen_features_1, r_f1) + expectation_loss(gen_features_2, r_f2) + auxiliary_loss(aux_scores, gen_class_labels))
