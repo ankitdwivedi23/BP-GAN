@@ -19,9 +19,9 @@ import matplotlib.gridspec as gridspec
 #%matplotlib inline
 plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
 plt.rcParams['image.interpolation'] = 'nearest'
-plt.rcParams['image.cmap'] = 'gray'
+plt.rcParams['image.cmap'] = 'brg'
 
-def show_images(images):
+def show_images(images, num_channels=1):
     images = np.reshape(images, [images.shape[0], -1])  # images reshape to (batch_size, D)
     sqrtn = int(np.ceil(np.sqrt(images.shape[0])))
     sqrtimg = int(np.ceil(np.sqrt(images.shape[1])))
@@ -36,7 +36,15 @@ def show_images(images):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(img.reshape([sqrtimg,sqrtimg]))
+        plt.imshow(img.reshape([sqrtimg, sqrtimg]))
+    return plt
+
+def imshow(inp, title=None):
+    """Imshow for Tensor."""
+    inp = inp.numpy().transpose((1, 2, 0))
+    plt.imshow(inp)
+    if title is not None:
+        plt.title(title)
     return plt
 
 def preprocess_img(x):

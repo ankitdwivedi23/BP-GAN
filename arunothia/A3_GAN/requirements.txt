@@ -70,3 +70,4 @@ lmdb
 
 #conda install -c pytorch pytorch
 #conda install -c pytorch torchvision
+#pip3 install torchfusion

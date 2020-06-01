@@ -1,13 +1,13 @@
 from setup import *
 
-def discriminator():
+def discriminator(img_resize=28, num_channels=1):
     """
     Build and return a PyTorch model implementing the architecture above.
     """
     model = nn.Sequential(
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             
-            nn.Linear(784, 256, bias=True),
+            nn.Linear(img_resize*img_resize*num_channels, 256, bias=True),
             nn.LeakyReLU(0.01, True),
             nn.Linear(256, 256, bias=True),
             nn.LeakyReLU(0.01, True),
@@ -19,7 +19,7 @@ def discriminator():
 
 
 
-def build_dc_classifier():
+def build_dc_classifier(img_resize=28, num_channels=1):
     """
     Build and return a PyTorch model for the DCGAN discriminator implementing
     the architecture above.
@@ -27,15 +27,15 @@ def build_dc_classifier():
     return nn.Sequential(
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        Unflatten(C=1, H=28, W=28),
-        nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(5,5), stride=1),
+        Unflatten(C=num_channels, H=img_resize, W=img_resize),
+        nn.Conv2d(in_channels=num_channels, out_channels=32, kernel_size=(5,5), stride=1, padding=2),
         nn.LeakyReLU(0.01, True),
         nn.MaxPool2d(kernel_size=(2,2), stride=2),
-        nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(5,5), stride=1),
+        nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(5,5), stride=1, padding=2),
         nn.LeakyReLU(0.01, True),
         nn.MaxPool2d(kernel_size=(2,2), stride=2),
         Flatten(),
-        nn.Linear(in_features=1024, out_features=1024, bias=True),
+        nn.Linear(in_features=int((img_resize*img_resize*64)/16), out_features=1024, bias=True),
         nn.LeakyReLU(0.01, True),
         nn.Linear(in_features=1024, out_features=1, bias=True)
 
