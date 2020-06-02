@@ -52,27 +52,27 @@ class Discriminator(nn.Module):
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-1 (Input => 32 * 32 * 16, Output => 32 * 32 * 32)
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
-            nn.LayerNorm([16, 32, 32]),
+            nn.LayerNorm([32, 32, 32]),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-2 (Input => 32 * 32 * 32, Output => 16 * 16 * 64)
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),
-            nn.LayerNorm([32, 32, 32]),
+            nn.LayerNorm([64, 16, 16]),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-3 (Input => 16 * 16 * 64, Output => 16 * 16 * 128)
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1),
-            nn.LayerNorm([64, 16, 16]),
+            nn.LayerNorm([128, 16, 16]),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-4 (Input => 16 * 16 * 128, Output => 8 * 8 * 256)
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
-            nn.LayerNorm([128, 16, 16]),
+            nn.LayerNorm([256, 8, 8]),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-5 (Input => 8 * 8 * 256, Output => 8 * 8 * 512)
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1),
-            nn.LayerNorm([256, 8, 8]),
+            nn.LayerNorm([512, 8, 8]),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5)
         )
