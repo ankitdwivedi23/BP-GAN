@@ -7,6 +7,7 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
+from torch import autograd
 from torchvision import datasets 
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
@@ -46,6 +47,8 @@ def main():
     clip_value = 0.01
     # number of training steps for discriminator per iter
     n_critic = 5
+    # Gradient penalty lambda hyperparameter
+    lambda_gp = 10
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -212,6 +215,30 @@ def main():
         plt.close()
 
     
+    def calc_gradient_penalty(netD, real_data, fake_data):
+        batch_size = real_data.size(0)
+        alpha = torch.rand(batch_size, 1)
+        alpha = alpha.expand(batch_size, int(real_data.nelement()/batch_size)).contiguous()
+        alpha = alpha.view(batch_size, 3, opt.img_size, opt.img_size)
+        alpha = alpha.to(device)
+
+        fake_data = fake_data.view(batch_size, 3, opt.img_size, opt.img_size)
+        interpolates = alpha * real_data.detach() + ((1 - alpha) * fake_data.detach())
+
+        interpolates = interpolates.to(device)
+        interpolates.requires_grad_(True)   
+
+        disc_interpolates, _ = netD(interpolates)
+
+        gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                                grad_outputs=torch.ones(disc_interpolates.size()).to(device),
+                                create_graph=True, retain_graph=True, only_inputs=True)[0]
+
+        gradients = gradients.view(gradients.size(0), -1)                              
+        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * lambda_gp
+        return gradient_penalty
+
+    
     print("Label to class mapping:")
     print_labels()
 
@@ -238,10 +265,6 @@ def main():
 
             real_pred, real_aux = disc(images)
             
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
-
             d_real_aux_loss = auxiliary_loss(real_aux, class_labels)
 
             # Train with fake batch
@@ -250,18 +273,16 @@ def main():
             gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
 
             noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise)
-            fake_pred, fake_aux = disc(gen_images.detach())
-
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
+            gen_images = gen(noise).detach()
+            fake_pred, fake_aux = disc(gen_images)
 
             #d_fake_aux_loss = auxiliary_loss(fake_aux, gen_class_labels)
 
+            gradient_penalty = calc_gradient_penalty(disc, images, gen_images)
+
             # Total discriminator loss
-            d_aux_loss = d_real_aux_loss 
-            d_loss = fake_pred.mean() - real_pred.mean() + d_aux_loss
+            d_aux_loss = d_real_aux_loss
+            d_loss = fake_pred.mean() - real_pred.mean() + gradient_penalty + d_aux_loss
             
             # Calculate discriminator accuracy
             pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
