@@ -85,6 +85,6 @@ class Discriminator(nn.Module):
         x = self.conv_layers(x)
         x=x.view(-1,8*8*512)
         validity = self.sig(self.fc_source(x)) # real or fake score
-        class_scores = self.fc_class(x) # logit scores for each class
+        class_scores = self.sig(self.fc_class(x)) # logit scores for each class
 
         return validity, class_scores
