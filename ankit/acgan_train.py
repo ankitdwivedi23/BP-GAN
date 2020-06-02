@@ -261,8 +261,7 @@ def main():
 
             # Total discriminator loss
             d_aux_loss = (d_real_aux_loss + d_fake_aux_loss) / 2
-            d_loss = fake_pred - real_pred + d_aux_loss
-            d_loss = d_loss.item()
+            d_loss = fake_pred.mean() - real_pred.mean() + d_aux_loss
             
             # Calculate discriminator accuracy
             pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
@@ -287,9 +286,8 @@ def main():
 
                 gen_pred, aux_scores = disc(gen_images)
                 g_aux_loss = auxiliary_loss(aux_scores, gen_class_labels)
-                g_loss = g_aux_loss - gen_pred
-                g_loss = g_loss.item()
-                
+                g_loss = g_aux_loss - gen_pred.mean()
+
                 g_loss.backward()
                 optimG.step()
 
