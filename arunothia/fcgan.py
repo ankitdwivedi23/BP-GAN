@@ -253,8 +253,7 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
             
-            c_fake = gen_class_labels.clone().detach()
-            c_fake[:] = c_fake_label
+            c_fake = c_fake_label * torch.ones_like(gen_class_labels).to(device)
             d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
 
             # Total discriminator loss
