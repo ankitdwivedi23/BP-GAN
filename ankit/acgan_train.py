@@ -292,10 +292,6 @@ def main():
             d_loss.backward()
             optimD.step()
 
-            # Clip weights of discriminator
-            for p in disc.parameters():
-                p.data.clamp_(-clip_value, clip_value)
-
             if i % n_critic == 0:
                 ############################
                 # Train Generator
