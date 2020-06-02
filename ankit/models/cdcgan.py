@@ -8,7 +8,7 @@ class Generator(nn.Module):
 
         self.convt1 = nn.Sequential(
             nn.ConvTranspose2d(latent_dim + num_classes, ngf*8, 4, 1, 0),
-            nn.BatchNorm2d(ngf*4),
+            nn.BatchNorm2d(ngf*8),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
