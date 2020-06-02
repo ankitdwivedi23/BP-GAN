@@ -262,6 +262,8 @@ def main():
             # Total discriminator loss
             d_aux_loss = (d_real_aux_loss + d_fake_aux_loss) / 2
             d_loss = fake_pred - real_pred + d_aux_loss
+            print("D_loss shape:")
+            print(d_loss.shape)
 
             # Calculate discriminator accuracy
             pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
