@@ -6,7 +6,7 @@ def get_setup_args():
     parser.add_argument("--num_epochs", type=int, default=50, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
     parser.add_argument("--num_workers", type=int, default=4, help="number of workers for dataloader")
-    parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
+    parser.add_argument("--lr", type=float, default=0.00005, help="learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")

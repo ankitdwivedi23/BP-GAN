@@ -40,6 +40,13 @@ def main():
     num_classes = opt.num_classes
     noise_dim = opt.latent_dim + opt.num_classes
 
+    # WGAN hyperparams
+
+    # lower and upper clip value for disc. weights
+    clip_value = 0.01
+    # number of training steps for discriminator per iter
+    n_critic = 5
+
     def weights_init(m):
         classname = m.__class__.__name__
         if classname.find('Conv') != -1:
@@ -74,10 +81,13 @@ def main():
     gen.apply(weights_init)
     disc.apply(weights_init)
 
-    optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-    optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    #optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    #optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
-    adversarial_loss = torch.nn.BCELoss()
+    optimG = optim.RMSprop(gen.parameters(), lr=opt.lr)
+    optimD = optim.RMSprop(disc.parameters(), lr=opt.lr)
+
+    #adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
@@ -231,7 +241,7 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            d_real_aux_loss = auxiliary_loss(real_aux, class_labels)
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -246,10 +256,11 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
+            d_fake_aux_loss = auxiliary_loss(fake_aux, gen_class_labels)
 
             # Total discriminator loss
-            d_loss = (d_real_loss + d_fake_loss) / 2
+            d_aux_loss = (d_real_aux_loss + d_fake_aux_loss) / 2
+            d_loss = fake_pred - real_pred + d_aux_loss
 
             # Calculate discriminator accuracy
             pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
@@ -259,22 +270,30 @@ def main():
             d_loss.backward()
             optimD.step()
 
-            ############################
-            # Train Generator
-            ###########################
+            # Clip weights of discriminator
+            for p in disc.parameters():
+                p.data.clamp_(-clip_value, clip_value)
 
-            optimG.zero_grad()
+            if i % n_critic == 0:
+                ############################
+                # Train Generator
+                ###########################
 
-            validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
+                optimG.zero_grad()
 
-            g_loss.backward()
-            optimG.step()
+                gen_images = gen(noise)
 
-            # Save losses and accuracy for plotting
-            G_losses.append(g_loss.item())
-            D_losses.append(d_loss.item())
-            D_acc.append(d_acc)
+                gen_pred, aux_scores = disc(gen_images)
+                g_aux_loss = auxiliary_loss(aux_scores, gen_class_labels)
+                g_loss = g_aux_loss - gen_pred
+
+                g_loss.backward()
+                optimG.step()
+
+                # Save losses and accuracy for plotting
+                G_losses.append(g_loss.item())
+                D_losses.append(d_loss.item())
+                D_acc.append(d_acc)
 
             # Output training stats
             if i % opt.print_every == 0:
