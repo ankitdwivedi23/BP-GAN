@@ -142,14 +142,15 @@ def main():
 
         images_done = 0
         for _, data in enumerate(val_loader, 0):
-            batch_size = data[0].size(0)
-            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
+            images, labels = data
+            batch_size = images.size(0)
+            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            #labels_onehot = F.one_hot(labels, num_classes)
-            labels_onehot = onehot[labels]
+            labels_onehot = F.one_hot(labels, num_classes)
+            #labels_onehot = onehot[labels]
 
-            #noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise, labels_onehot)
+            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)
+            gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
                 vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))
                 if (not source_images_available):
@@ -165,7 +166,7 @@ def main():
 
     def sample_images(num_images, batches_done):
         # Sample noise
-        z = torch.randn((num_classes * num_images, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -173,10 +174,10 @@ def main():
             for j in range(num_images):
                 labels[i*num_images + j] = i
         
-        #labels_onehot = F.one_hot(labels, num_classes)
-        labels_onehot = onehot[labels]
-        #z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
-        sample_imgs = gen(z, labels_onehot)
+        labels_onehot = F.one_hot(labels, num_classes)
+        #labels_onehot = onehot[labels]
+        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)        
+        sample_imgs = gen(z)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     
@@ -246,14 +247,14 @@ def main():
             d_real_loss = adversarial_loss(real_pred, noisy_label)
 
             # Train with fake batch
-            noise = torch.randn((batch_size, opt.latent_dim)).view(-1, opt.latent_dim, 1, 1).to(device)
+            noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
-            #gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
-            gen_class_labels_onehot = onehot[gen_class_labels]
+            gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            #gen_class_labels_onehot = onehot[gen_class_labels]
             gen_class_labels_fill = fill[gen_class_labels]
 
-            #noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
-            gen_images = gen(noise, gen_class_labels_onehot)
+            noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)
+            gen_images = gen(noise)
             fake_pred = disc(gen_images.detach(), gen_class_labels_fill).view(-1)
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob

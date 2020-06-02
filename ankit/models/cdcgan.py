@@ -6,14 +6,8 @@ class Generator(nn.Module):
     def __init__(self, num_channels, latent_dim, num_classes, ngf):
         super(Generator, self).__init__()
 
-        self.convt1_1 = nn.Sequential(
-            nn.ConvTranspose2d(latent_dim, ngf*4, 4, 1, 0),
-            nn.BatchNorm2d(ngf*4),
-            nn.LeakyReLU(0.2, inplace=True)
-        )
-
-        self.convt1_2 = nn.Sequential(
-            nn.ConvTranspose2d(num_classes, ngf*4, 4, 1, 0),
+        self.convt1 = nn.Sequential(
+            nn.ConvTranspose2d(latent_dim + num_classes, ngf*8, 4, 1, 0),
             nn.BatchNorm2d(ngf*4),
             nn.LeakyReLU(0.2, inplace=True)
         )
@@ -41,10 +35,8 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, noise, label):
-        x = self.convt1_1(noise)
-        y = self.convt1_2(label)
-        x = torch.cat([x, y], 1)
+    def forward(self, noise):
+        x = self.convt1(noise)
         x = self.convt2(x)
         x = self.convt3(x)
         x = self.convt4(x)
