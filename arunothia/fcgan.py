@@ -260,8 +260,8 @@ def main():
             d_loss = (d_real_loss + d_fake_loss) / 2
 
             # Calculate discriminator accuracy
-            pred = np.concatenate([real_aux.data.numpy(), fake_aux.data.numpy()], axis=0)
-            gt = np.concatenate([class_labels.data.numpy(), gen_class_labels.data.numpy()], axis=0)
+            pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
+            gt = np.concatenate([class_labels.data.cpu().numpy(), gen_class_labels.data.cpu().numpy()], axis=0)
             d_acc = np.mean(np.argmax(pred, axis=1) == gt)
 
             d_loss.backward()
