@@ -27,8 +27,12 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(in_channels=96, out_channels=48, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(48),
             nn.LeakyReLU(0.2, inplace=True),
-            # ConvT-Tanh (Input => 32 * 32 * 48, Output => 64 * 64 * 3)
-            nn.ConvTranspose2d(in_channels=48, out_channels=3, kernel_size=4, stride=2, padding=1),
+            # ConvT-BN-ReLU-4 (Input => 32 * 32 * 48, Output => 64 * 64 * 24)
+            nn.ConvTranspose2d(in_channels=48, out_channels=24, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(24),
+            nn.LeakyReLU(0.2, inplace=True),
+            # ConvT-Tanh (Input => 64 * 64 * 24, Output => 128 * 128 * 3)
+            nn.ConvTranspose2d(in_channels=24, out_channels=3, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
         )
     
@@ -46,7 +50,11 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.conv_layers = nn.Sequential(
-            # Conv-LeakyReLU-Dropout (Input => 64 * 64 * 3, Output => 32 * 32 * 16)
+            # Conv-LeakyReLU-Dropout (Input => 128 * 128 * 3, Output => 64 * 64 * 8)
+            nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Dropout(0.5),
+            # Conv-LeakyReLU-Dropout (Input => 64 * 64 * 8, Output => 32 * 32 * 16)
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
