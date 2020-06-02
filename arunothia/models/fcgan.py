@@ -55,7 +55,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-LeakyReLU-Dropout (Input => 64 * 64 * 8, Output => 32 * 32 * 16)
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Dropout(0.5),
             # Conv-BN-LeakyReLU-Dropout-1 (Input => 32 * 32 * 16, Output => 32 * 32 * 32)
