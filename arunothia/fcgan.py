@@ -232,7 +232,7 @@ def main():
 
             optimD.zero_grad()
 
-            real_pred, real_aux, real_features = disc(images)
+            real_pred, real_aux = disc(images)
             
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
@@ -247,7 +247,7 @@ def main():
 
             noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise)
-            fake_pred, fake_aux, fake_features = disc(gen_images.detach())
+            fake_pred, fake_aux = disc(gen_images.detach())
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
@@ -273,9 +273,7 @@ def main():
 
             optimG.zero_grad()
 
-            r_f1 = real_features.clone().detach()
-
-            validity, aux_scores, gen_features = disc(gen_images)
+            validity, aux_scores = disc(gen_images)
             g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels)) # + expectation_loss(gen_features, r_f1)
 
             g_loss.backward()
