@@ -85,11 +85,11 @@ def main():
     gen.apply(weights_init)
     disc.apply(weights_init)
 
-    #optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-    #optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
-    optimG = optim.RMSprop(gen.parameters(), lr=opt.lr)
-    optimD = optim.RMSprop(disc.parameters(), lr=opt.lr)
+    #optimG = optim.RMSprop(gen.parameters(), lr=opt.lr)
+    #optimD = optim.RMSprop(disc.parameters(), lr=opt.lr)
 
     #adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
