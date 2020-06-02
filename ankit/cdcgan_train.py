@@ -121,7 +121,8 @@ def main():
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
                                                  transforms.Resize((opt.img_size, opt.img_size)),
-                                                 transforms.ToTensor()
+                                                 transforms.ToTensor(),
+                                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
         
         val_loader = torch.utils.data.DataLoader(val_set,
@@ -152,9 +153,9 @@ def main():
             noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)
             gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
-                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i), normalize=True)
                 if (not source_images_available):
-                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i))          
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)          
             images_done += batch_size
         
         fid = eval_fid(output_images_path, output_source_images_path)
