@@ -257,10 +257,10 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
-            d_fake_aux_loss = auxiliary_loss(fake_aux, gen_class_labels)
+            #d_fake_aux_loss = auxiliary_loss(fake_aux, gen_class_labels)
 
             # Total discriminator loss
-            d_aux_loss = (d_real_aux_loss + d_fake_aux_loss) / 2
+            d_aux_loss = d_real_aux_loss 
             d_loss = fake_pred.mean() - real_pred.mean() + d_aux_loss
             
             # Calculate discriminator accuracy
