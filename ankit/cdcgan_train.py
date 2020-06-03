@@ -227,10 +227,6 @@ def main():
 
             batch_size = images.size(0)
 
-            real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
-            real_label = torch.full((batch_size,), real_label_val, device=device)
-            fake_label = torch.full((batch_size,), fake_label_val, device=device)
-
             ############################
             # Train Discriminator
             ###########################
@@ -241,11 +237,7 @@ def main():
 
             real_pred = disc(images, class_labels_fill).view(-1)
             
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
-
-            d_real_loss = adversarial_loss(real_pred, noisy_label)
+            d_real_loss = (real_pred - 1)**2
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -258,14 +250,11 @@ def main():
             gen_images = gen(noise)
             fake_pred = disc(gen_images.detach(), gen_class_labels_fill).view(-1)
 
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
-
-            d_fake_loss = adversarial_loss(fake_pred, noisy_label)
+            d_fake_loss = fake_pred**2
 
             # Total discriminator loss
-            d_loss = d_real_loss + d_fake_loss
+            d_loss = 0.5 * (d_real_loss + d_fake_loss)
+            d_loss = d_loss.mean()
 
             d_loss.backward()
             optimD.step()
@@ -277,7 +266,8 @@ def main():
             optimG.zero_grad()
 
             validity = disc(gen_images, gen_class_labels_fill).view(-1)
-            g_loss = adversarial_loss(validity, real_label)
+            g_loss = 0.5 * (validity - 1)**2
+            g_loss = g_loss.mean()
 
             g_loss.backward()
             optimG.step()

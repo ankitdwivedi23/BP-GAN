@@ -77,10 +77,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True)
         )
 
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(ndf*8, 1, 4, 1, 0),
-            nn.Sigmoid()
-        )
+        self.fc = nn.Linear(4*4*ndf*8, 1)
 
     def forward(self, img, label):
         x = self.conv1_1(img)
@@ -89,6 +86,6 @@ class Discriminator(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
-        x = self.conv5(x)
+        x = self.fc(x)
 
         return x
