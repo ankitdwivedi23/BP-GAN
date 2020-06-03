@@ -294,12 +294,15 @@ def main():
             print("Saving G & D loss plot...")
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Validating model...")
-            fid = validate(keep_images=False)
+            gen.eval()
+            with torch.no_grad():
+                fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
+            gen.train()
 
     
     print("Saving final generator model...")
@@ -311,7 +314,9 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    fid = validate()
+    gen.eval()    
+    with torch.no_grad():
+        fid = validate()
     print("Final Validation FID: {}".format(fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
