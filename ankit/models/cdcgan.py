@@ -47,7 +47,9 @@ class Generator(nn.Module):
 
 class Discriminator(nn.Module):
     def __init__(self, num_channels, num_classes, ndf):
-        super(Discriminator, self).__init__()        
+        super(Discriminator, self).__init__()
+
+        self.ndf = ndf        
         
         self.conv1_1 = nn.Sequential(
             nn.Conv2d(num_channels, ndf//2, 4, 2, 1),
@@ -86,6 +88,7 @@ class Discriminator(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
+        x = x.view(-1,4*4*self.ndf*8)
         x = self.fc(x)
 
         return x
