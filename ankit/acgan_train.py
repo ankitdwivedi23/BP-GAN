@@ -214,10 +214,6 @@ def main():
 
             batch_size = images.size(0)
 
-            real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
-            real_label = torch.full((batch_size,), real_label_val, device=device)
-            fake_label = torch.full((batch_size,), fake_label_val, device=device)
-
             ############################
             # Train Discriminator
             ###########################
@@ -228,11 +224,8 @@ def main():
 
             real_pred, real_aux = disc(images)
             
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
-
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            d_real_ls_loss = (real_pred - 1)**2
+            d_real_aux_loss = auxiliary_loss(real_aux, class_labels)
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -243,14 +236,14 @@ def main():
             gen_images = gen(noise)
             fake_pred, fake_aux = disc(gen_images.detach())
 
-            mask = torch.rand((batch_size,), device=device) <= label_noise_prob
-            mask = mask.type(torch.float)            
-            noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
-
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
+            d_fake_ls_loss = fake_pred**2
+            d_fake_aux_loss = auxiliary_loss(fake_aux, gen_class_labels)
 
             # Total discriminator loss
-            d_loss = (d_real_loss + d_fake_loss) / 2
+            d_ls_loss = 0.5 * (d_real_ls_loss + d_fake_ls_loss)
+            d_ls_loss = d_ls_loss.mean()
+            d_aux_loss = 0.5 * (d_real_aux_loss + d_fake_aux_loss)            
+            d_loss = d_ls_loss + d_aux_loss
 
             # Calculate discriminator accuracy
             pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
@@ -267,7 +260,10 @@ def main():
             optimG.zero_grad()
 
             validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
+            g_ls_loss = 0.5 * (validity - 1)**2
+            g_ls_loss = g_ls_loss.mean()
+            g_aux_loss = auxiliary_loss(aux_scores, gen_class_labels)
+            g_loss = g_ls_loss + g_aux_loss
 
             g_loss.backward()
             optimG.step()
