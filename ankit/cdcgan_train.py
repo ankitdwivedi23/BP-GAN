@@ -69,9 +69,10 @@ def main():
     os.makedirs(output_sample_images_path, exist_ok=True)
 
     train_set = datasets.ImageFolder(root=train_images_path,
-                                transform=transforms.Compose([
-                                    transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                    transform=transforms.Compose([
+                                        transforms.Resize((opt.img_size, opt.img_size)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
@@ -121,8 +122,7 @@ def main():
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
                                                  transforms.Resize((opt.img_size, opt.img_size)),
-                                                 transforms.ToTensor(),
-                                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                                                 transforms.ToTensor()
                             ]))
         
         val_loader = torch.utils.data.DataLoader(val_set,
@@ -314,12 +314,15 @@ def main():
             print("Saving G & D loss plot...")
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Validating model...")
-            fid = validate(keep_images=False)
+            gen.eval()
+            with torch.no_grad():
+                fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
+            gen.train()
 
     
     print("Saving final generator model...")
@@ -331,7 +334,9 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    fid = validate()
+    gen.eval()    
+    with torch.no_grad():
+        fid = validate()
     print("Final Validation FID: {}".format(fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
