@@ -60,7 +60,8 @@ def main():
     train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
                                     transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
@@ -81,7 +82,8 @@ def main():
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
-    real_label_smooth_val = 0.9
+    real_label_low = 0.75
+    real_label_high = 1.0
     fake_label_val = 0
 
     # Probability of adding label noise during discriminator training
@@ -121,9 +123,18 @@ def main():
         output_images_path = os.path.join(opt.output_path, opt.version, "val")
         os.makedirs(output_images_path, exist_ok=True)
 
+        output_source_images_path = val_images_path + "_" + str(opt.img_size)
+
+        source_images_available = True
+
+        if (not os.path.exists(output_source_images_path)):
+            os.makedirs(output_source_images_path)
+            source_images_available = False
+
         images_done = 0
         for _, data in enumerate(val_loader, 0):
-            batch_size = data[0].size(0)
+            images, labels = data
+            batch_size = images.size(0)
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             labels_onehot = F.one_hot(labels, num_classes)
@@ -131,10 +142,12 @@ def main():
             noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
             gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
-                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i))            
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i), normalize=True)       
+                if (not source_images_available):
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)     
             images_done += batch_size
         
-        fid = eval_fid(output_images_path, val_images_path)
+        fid = eval_fid(output_images_path, output_source_images_path)
         if (not keep_images):
             print("Deleting images generated for validation...")
             rmtree(output_images_path)
@@ -166,6 +179,7 @@ def main():
         plt.ylabel("Loss")
         plt.legend()
         plt.savefig(path)
+        plt.close()
 
     def save_acc_plot(path):
         plt.figure(figsize=(10,5))
@@ -174,6 +188,7 @@ def main():
         plt.xlabel("iterations")
         plt.ylabel("accuracy")
         plt.savefig(path)
+        plt.close()
     
     def save_fid_plot(FIDs, epochs, path):
         #N = len(FIDs)
@@ -184,12 +199,13 @@ def main():
         plt.ylabel("FID")
         #plt.xticks([i * 49 for i in range(1, N+1)])    
         plt.savefig(path)
+        plt.close()
 
     
     print("Label to class mapping:")
     print_labels()
 
-    for epoch in range(opt.num_epochs):
+    for epoch in range(1, opt.num_epochs + 1):
         for i, data in enumerate(dataloader, 0):
 
             images, class_labels = data
@@ -198,7 +214,7 @@ def main():
 
             batch_size = images.size(0)
 
-            real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
+            real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
             real_label = torch.full((batch_size,), real_label_val, device=device)
             fake_label = torch.full((batch_size,), fake_label_val, device=device)
 
@@ -282,7 +298,7 @@ def main():
                 gen.train()
             
         # Save model checkpoint
-        if (epoch !=0 and epoch % opt.checkpoint_epochs == 0):
+        if (epoch != opt.num_epochs and epoch % opt.checkpoint_epochs == 0):
             print("Checkpoint at epoch {}".format(epoch))
             print("Saving generator model...")
             torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
@@ -290,13 +306,17 @@ def main():
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
+            
             print("Validating model...")
-            fid = validate(keep_images=False)
+            gen.eval()
+            with torch.no_grad():
+                fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
+            gen.train()
 
     
     print("Saving final generator model...")
@@ -312,7 +332,10 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    fid = validate()
+    gen.eval()    
+    with torch.no_grad():
+        fid = validate()
+    print("Final Validation FID: {}".format(fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
     print("Saving final FID plot...")
