@@ -71,7 +71,8 @@ def main():
     train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
                                     transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
@@ -87,16 +88,6 @@ def main():
 
     optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
     optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-
-    adversarial_loss = torch.nn.BCELoss()
-
-    real_label_val = 1
-    real_label_low = 0.75
-    real_label_high = 1.0
-    fake_label_val = 0
-
-    # Probability of adding label noise during discriminator training
-    label_noise_prob = 0.05
 
     # Keep track of losses, accuracy, FID
     G_losses = []
@@ -121,8 +112,7 @@ def main():
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
                                                  transforms.Resize((opt.img_size, opt.img_size)),
-                                                 transforms.ToTensor(),
-                                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                                                 transforms.ToTensor()
                             ]))
         
         val_loader = torch.utils.data.DataLoader(val_set,
