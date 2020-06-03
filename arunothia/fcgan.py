@@ -239,7 +239,9 @@ def main():
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            #d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            d_real_ls =  (real_pred - 1)**2
+            d_real_loss = (d_real_ls.mean() + auxiliary_loss(real_aux, class_labels)) / 2
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
@@ -255,7 +257,9 @@ def main():
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
             
             c_fake = c_fake_label * torch.ones_like(gen_class_labels).to(device)
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
+            #d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
+            d_fake_ls = fake_pred**2
+            d_fake_loss = (d_fake_ls.mean() + auxiliary_loss(fake_aux, c_fake)) / 2
 
             # Total discriminator loss
             d_loss = (d_real_loss + d_fake_loss) / 2
@@ -275,7 +279,9 @@ def main():
             optimG.zero_grad()
 
             validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels)) # + expectation_loss(gen_features, r_f1)
+            #g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels)) # + expectation_loss(gen_features, r_f1)
+            g_ls = (validity - 1)**2
+            g_loss = 0.5 * (g_ls.mean() + auxiliary_loss(aux_scores, gen_class_labels))
 
             g_loss.backward()
             optimG.step()
