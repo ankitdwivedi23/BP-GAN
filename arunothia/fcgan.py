@@ -202,12 +202,12 @@ def main():
         return all_nn
     
     def get_onehot_labels(num_images):
-        labels = torch.zeros(num_images, 1)
+        labels = torch.zeros(num_images, 1).to(device)
         for i in range(num_classes - 1):
-            temp = torch.ones(num_images, 1) + i
+            temp = torch.ones(num_images, 1).to(device) + i
             labels = torch.cat([labels, temp], 0)
             
-        labels_onehot = torch.zeros(num_images * num_classes, num_classes)
+        labels_onehot = torch.zeros(num_images * num_classes, num_classes).to(device)
         labels_onehot.scatter_(1, labels.type(torch.LongTensor), 1)
 
         return labels_onehot
