@@ -192,13 +192,14 @@ def main():
         return r
     
     def get_nearest_neighbour(sample_images, num_images):
-        total_imgs = sample_images.shape[0]
-        nn = []
+        all_nn = []
         for i in range(num_classes):
-            nn.append(get_nn(sample_images[i*num_images:(i+1)*num_images], i))
-        r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
+            nearest_n = get_nn(sample_images[i*num_images:(i+1)*num_images], i)
+            class_nn = torch.stack([sample_images[i*num_images:(i+1)*num_images], nearest_n], dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
+            all_nn.append(class_nn)
+        #r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
         #print(r.shape)
-        return r
+        return all_nn
 
     def sample_images(num_images, batches_done, isLast):
         # Sample noise - declared once at the top to maintain consistency of samples
@@ -220,10 +221,12 @@ def main():
 
         if isLast:
             print("Estimating nearest neighbors for the last samples, this takes a few minutes...")
-            nearest_neighbour_imgs = get_nearest_neighbour(sample_imgs, num_images)
-            vutils.save_image(nearest_neighbour_imgs.data, "{}/{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
-            nearest_neighbour_imgs = get_nearest_neighbour(const_sample_imgs, num_images)
-            vutils.save_image(nearest_neighbour_imgs.data, "{}/const_{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+            nearest_neighbour_imgs_list = get_nearest_neighbour(sample_imgs, num_images)
+            for label, nn_imgs in nearest_neighbour_imgs_list.enumerate():
+                vutils.save_image(nn_imgs.data, "{}/{}_{}.png".format(output_nn_images_path, batches_done, label), nrow=num_images, padding=2, normalize=True)
+            nearest_neighbour_imgs_list = get_nearest_neighbour(const_sample_imgs, num_images)
+            for nn_imgs in nearest_neighbour_imgs_list:
+                vutils.save_image(nn_imgs.data, "{}/const_{}_{}.png".format(output_nn_images_path, batches_done, label), nrow=num_images, padding=2, normalize=True)
             print("Saved nearest neighbors.")
 
     
