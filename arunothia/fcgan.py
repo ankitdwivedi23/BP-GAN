@@ -73,6 +73,10 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
+    dataloader_nn = torch.utils.data.DataLoader(train_set,
+                                            batch_size=1,
+                                            num_workers=opt.num_workers)
+
     gen = fcgan.Generator(noise_dim).to(device)
     disc = fcgan.Discriminator(num_classes).to(device)
 
@@ -173,16 +177,16 @@ def main():
     def get_nn(images, class_label):
         nn = [None]*len(images)
         dist = [np.inf]*len(images)
-        for e, data in enumerate(dataloader, 0):
-            for img, label in data:
-                if label != class_label:
-                    continue
-                img = img.to(device)
-                for i in range(len(images)):
-                    d = get_dist(images[i], img)
-                    if  d < dist[i]:
-                        dist[i] = d
-                        nn[i] = img
+        for e, data in enumerate(dataloader_nn, 0):
+            img, label = data
+            if label != class_label:
+                continue
+            img = img.to(device)
+            for i in range(len(images)):
+                d = get_dist(images[i], img)
+                if  d < dist[i]:
+                    dist[i] = d
+                    nn[i] = img
         return torch.stack(nn, dim=0).to(device)
     
     def get_nearest_neighbour(sample_images, num_images):
