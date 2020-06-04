@@ -324,6 +324,8 @@ def main():
             with torch.no_grad():
             	fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
+            with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
+                f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
@@ -355,6 +357,8 @@ def main():
     with torch.no_grad():
         fid = validate()
     print("Final Validation FID: {}".format(fid))
+    with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
+        f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
     FIDs.append(fid)
     val_epochs.append(epoch)
     print("Saving final FID plot...")
