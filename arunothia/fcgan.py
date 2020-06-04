@@ -187,7 +187,7 @@ def main():
                 if  d < dist[i]:
                     dist[i] = d
                     nn[i] = img
-        r = torch.stack(nn, dim=0).to(device)
+        r = torch.stack(nn, dim=0).squeeze().to(device)
         print(r.shape)
         return r
     
@@ -196,7 +196,7 @@ def main():
         nn = []
         for i in range(num_classes):
             nn.append(get_nn(sample_images[i*num_images:(i+1)*num_images], i))
-        r = torch.stack(nn, dim=0).to(device)
+        r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
         print(r.shape)
         return r
 
