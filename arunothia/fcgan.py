@@ -172,7 +172,7 @@ def main():
         return fid
 
     def get_dist(img1, img2):
-        return torch.dist(img1, img2)
+        return torch.dist(img1, img2, p=1)
     
     def get_nn(images, class_label):
         nn = [None]*len(images)
@@ -226,7 +226,7 @@ def main():
         
         labels_onehot = F.one_hot(labels, num_classes)        
         '''
-        
+
         labels_onehot = get_onehot_labels(num_images)       
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
