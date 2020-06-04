@@ -109,6 +109,9 @@ def main():
 
     
     def validate(keep_images=True):
+        # Put G in eval mode
+        gen.eval()
+
         val_set = datasets.ImageFolder(root=val_images_path,
                                        transform=transforms.Compose([
                                                  transforms.Resize((opt.img_size, opt.img_size)),
@@ -146,7 +149,10 @@ def main():
                 if (not source_images_available):
                     vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)     
             images_done += batch_size
-        
+
+        # Put G back in train mode
+        gen.train()
+
         fid = eval_fid(output_images_path, output_source_images_path)
         if (not keep_images):
             print("Deleting images generated for validation...")
@@ -300,15 +306,13 @@ def main():
         # Save model checkpoint
         if (epoch != opt.num_epochs and epoch % opt.checkpoint_epochs == 0):
             print("Checkpoint at epoch {}".format(epoch))
-            print("Saving generator model...")
-            torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
+            
             print("Saving G & D loss plot...")
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
             
             print("Validating model...")
-            gen.eval()
             with torch.no_grad():
                 fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
@@ -316,12 +320,19 @@ def main():
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
-            gen.train()
 
-    
-    print("Saving final generator model...")
-    torch.save(gen.state_dict(), os.path.join(output_model_path, "model.pt"))
-    print("Done!")
+            print("Saving model checkpoint...")
+            torch.save({
+            'epoch': epoch,
+            'g_state_dict': gen.state_dict(),
+            'd_state_dict': disc.state_dict(),
+            'g_optimizer_state_dict': optimG.state_dict(),
+            'd_optimizer_state_dict': optimD.state_dict(),
+            'g_loss': g_loss.item(),
+            'd_loss': d_loss.item(),
+            'd_accuracy': d_acc,
+            'val_fid': fid
+            }, os.path.join(output_model_path, "model_checkpoint_{}.tar".format(epoch)))
 
     print("Saving final G & D loss plot...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
@@ -340,6 +351,21 @@ def main():
     val_epochs.append(epoch)
     print("Saving final FID plot...")
     save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot"))
+    print("Done!")
+
+    print("Saving final model...")
+    torch.save({
+    'epoch': epoch,
+    'g_state_dict': gen.state_dict(),
+    'd_state_dict': disc.state_dict(),
+    'g_optimizer_state_dict': optimG.state_dict(),
+    'd_optimizer_state_dict': optimD.state_dict(),
+    'g_loss': g_loss.item(),
+    'd_loss': d_loss.item(),
+    'd_accuracy': d_acc,
+    'val_fid': fid
+    }, os.path.join(output_model_path, "model.tar"))
+    print("Done!")
 
 if __name__ == '__main__':
     main()
