@@ -222,10 +222,10 @@ def main():
         if isLast:
             print("Estimating nearest neighbors for the last samples, this takes a few minutes...")
             nearest_neighbour_imgs_list = get_nearest_neighbour(sample_imgs, num_images)
-            for label, nn_imgs in nearest_neighbour_imgs_list.enumerate():
+            for label, nn_imgs in enumerate(nearest_neighbour_imgs_list):
                 vutils.save_image(nn_imgs.data, "{}/{}_{}.png".format(output_nn_images_path, batches_done, label), nrow=num_images, padding=2, normalize=True)
             nearest_neighbour_imgs_list = get_nearest_neighbour(const_sample_imgs, num_images)
-            for nn_imgs in nearest_neighbour_imgs_list:
+            for label, nn_imgs in enumerate(nearest_neighbour_imgs_list):
                 vutils.save_image(nn_imgs.data, "{}/const_{}_{}.png".format(output_nn_images_path, batches_done, label), nrow=num_images, padding=2, normalize=True)
             print("Saved nearest neighbors.")
 
