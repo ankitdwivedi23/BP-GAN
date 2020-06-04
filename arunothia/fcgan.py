@@ -53,9 +53,13 @@ def main():
     output_model_path = os.path.join(opt.output_path, opt.version)
     output_train_images_path = os.path.join(opt.output_path, opt.version, "train")
     output_sample_images_path = os.path.join(opt.output_path, opt.version, "sample")
+    output_nn_images_path = os.path.join(opt.output_path, opt.version, "nn")
+    output_const_images_path = os.path.join(opt.output_path, opt.version, "constant_sample")
 
     os.makedirs(output_train_images_path, exist_ok=True)
     os.makedirs(output_sample_images_path, exist_ok=True)
+    os.makedirs(output_nn_images_path, exist_ok=True)
+    os.makedirs(output_const_images_path, exist_ok=True)
 
     train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
@@ -67,6 +71,10 @@ def main():
     dataloader = torch.utils.data.DataLoader(train_set,
                                             batch_size=opt.batch_size,
                                             shuffle=True,
+                                            num_workers=opt.num_workers)
+
+    dataloader_nn = torch.utils.data.DataLoader(train_set,
+                                            batch_size=1,
                                             num_workers=opt.num_workers)
 
     gen = fcgan.Generator(noise_dim).to(device)
@@ -98,6 +106,9 @@ def main():
     D_acc = []
     FIDs = []
     val_epochs = []
+
+    # Define a fixed noise vector for consistent samples
+    z_const = torch.randn((num_classes * opt.num_sample_images, opt.latent_dim)).to(device)
 
     def print_labels():
         for class_name in train_set.classes:
@@ -160,9 +171,37 @@ def main():
             rmtree(output_images_path)
         return fid
 
+    def get_dist(img1, img2):
+        return torch.dist(img1, img2)
+    
+    def get_nn(images, class_label):
+        nn = [None]*len(images)
+        dist = [np.inf]*len(images)
+        for e, data in enumerate(dataloader_nn, 0):
+            img, label = data
+            if label != class_label:
+                continue
+            img = img.to(device)
+            for i in range(len(images)):
+                d = get_dist(images[i], img)
+                if  d < dist[i]:
+                    dist[i] = d
+                    nn[i] = img
+        r = torch.stack(nn, dim=0).squeeze().to(device)
+        #print(r.shape)
+        return r
+    
+    def get_nearest_neighbour(sample_images, num_images):
+        total_imgs = sample_images.shape[0]
+        nn = []
+        for i in range(num_classes):
+            nn.append(get_nn(sample_images[i*num_images:(i+1)*num_images], i))
+        r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
+        #print(r.shape)
+        return r
 
-    def sample_images(num_images, batches_done):
-        # Sample noise
+    def sample_images(num_images, batches_done, isLast):
+        # Sample noise - declared once at the top to maintain consistency of samples
         z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
@@ -174,7 +213,18 @@ def main():
         labels_onehot = F.one_hot(labels, num_classes)
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
+        z_const_cat = torch.cat((z_const, labels_onehot.to(dtype=torch.float)), 1)   
+        const_sample_imgs = gen(z_const_cat)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+        vutils.save_image(const_sample_imgs.data, "{}/{}.png".format(output_const_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+
+        if isLast:
+            print("Estimating nearest neighbors for the last samples, this takes a few minutes...")
+            nearest_neighbour_imgs = get_nearest_neighbour(sample_imgs, num_images)
+            vutils.save_image(nearest_neighbour_imgs.data, "{}/{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+            nearest_neighbour_imgs = get_nearest_neighbour(const_sample_imgs, num_images)
+            vutils.save_image(nearest_neighbour_imgs.data, "{}/const_{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+            print("Saved nearest neighbors.")
 
     
     def save_loss_plot(path):
@@ -300,12 +350,13 @@ def main():
             batches_done = epoch * len(dataloader) + i
             
             # Generate and save sample images
-            if (batches_done % opt.sample_interval == 0) or ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1)):
+            isLast = ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1))
+            if (batches_done % opt.sample_interval == 0) or isLast:
                 # Put G in eval mode
                 gen.eval()
                 
                 with torch.no_grad():                
-                    sample_images(opt.num_sample_images, batches_done)
+                    sample_images(opt.num_sample_images, batches_done, isLast)
                 vutils.save_image(gen_images.data[:36], "{}/{}.png".format(output_train_images_path, batches_done), nrow=6, padding=2, normalize=True)
                 
                 # Put G back in train mode
