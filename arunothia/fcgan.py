@@ -16,7 +16,7 @@ from shutil import rmtree
 
 import args
 import util
-from models import acgan
+from models import fcgan
 from eval import fid_score
 
 def set_random_seed(seed=23):
@@ -69,22 +69,25 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
-    gen = acgan.Generator(noise_dim).to(device)
-    disc = acgan.Discriminator(num_classes).to(device)
+    gen = fcgan.Generator(noise_dim).to(device)
+    disc = fcgan.Discriminator(num_classes).to(device)
 
     gen.apply(weights_init)
     disc.apply(weights_init)
 
     optimG = optim.Adam(gen.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
     optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    #optimD = optim.SGD(disc.parameters(), lr=opt.lr_sgd)
 
     adversarial_loss = torch.nn.BCELoss()
     auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
+    #real_label_smooth_val = 0.9
     real_label_low = 0.75
     real_label_high = 1.0
     fake_label_val = 0
+    c_fake_label = opt.num_classes
 
     # Probability of adding label noise during discriminator training
     label_noise_prob = 0.05
@@ -122,15 +125,13 @@ def main():
         
         output_images_path = os.path.join(opt.output_path, opt.version, "val")
         os.makedirs(output_images_path, exist_ok=True)
-
-        output_source_images_path = val_images_path + "_" + str(opt.img_size)
-
-        source_images_available = True
-
-        if (not os.path.exists(output_source_images_path)):
-            os.makedirs(output_source_images_path)
+		
+        output_source_images_path = val_images_path + "_" + str(opt.img_size)	
+        source_images_available = True	
+        if (not os.path.exists(output_source_images_path)):	
+            os.makedirs(output_source_images_path)	
             source_images_available = False
-
+        
         images_done = 0
         for _, data in enumerate(val_loader, 0):
             images, labels = data
@@ -201,6 +202,11 @@ def main():
         plt.savefig(path)
         plt.close()
 
+    def expectation_loss(real_feature, fake_feature):
+        norm = torch.norm(real_feature - fake_feature)
+        total = torch.abs(norm).sum()
+        return norm/total
+
     
     print("Label to class mapping:")
     print_labels()
@@ -214,6 +220,7 @@ def main():
 
             batch_size = images.size(0)
 
+            #real_label_smooth = torch.full((batch_size,), real_label_smooth_val, device=device)
             real_label_smooth = (real_label_low - real_label_high) * torch.rand((batch_size,), device=device) + real_label_high
             real_label = torch.full((batch_size,), real_label_val, device=device)
             fake_label = torch.full((batch_size,), fake_label_val, device=device)
@@ -246,8 +253,9 @@ def main():
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
-
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
+            
+            c_fake = c_fake_label * torch.ones_like(gen_class_labels).to(device)
+            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, c_fake)) / 2
 
             # Total discriminator loss
             d_loss = (d_real_loss + d_fake_loss) / 2
@@ -267,7 +275,7 @@ def main():
             optimG.zero_grad()
 
             validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
+            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels)) # + expectation_loss(gen_features, r_f1)
 
             g_loss.backward()
             optimG.step()
@@ -306,17 +314,15 @@ def main():
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
             print("Saving D accuracy plot...")
             save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
-            
             print("Validating model...")
-            gen.eval()
+            gen.eval()	
             with torch.no_grad():
-                fid = validate(keep_images=False)
+            	fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             FIDs.append(fid)
             val_epochs.append(epoch)
             print("Saving FID plot...")
             save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
-            gen.train()
 
     
     print("Saving final generator model...")
@@ -332,7 +338,7 @@ def main():
     print("Done!")
 
     print("Validating final model...")
-    gen.eval()    
+    gen.eval()
     with torch.no_grad():
         fid = validate()
     print("Final Validation FID: {}".format(fid))

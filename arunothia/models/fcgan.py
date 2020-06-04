@@ -78,7 +78,7 @@ class Discriminator(nn.Module):
         )
 
         self.fc_source=nn.Linear(8*8*512,1)
-        self.fc_class=nn.Linear(8*8*512, num_classes)
+        self.fc_class=nn.Linear(8*8*512, num_classes+1)
         self.sig=nn.Sigmoid()
     
     def forward(self, x):
