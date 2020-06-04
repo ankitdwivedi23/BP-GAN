@@ -16,7 +16,7 @@ from shutil import rmtree
 
 import args
 import util
-from models import acgan
+from models import cdcgan
 from eval import fid_score
 
 def set_random_seed(seed=23):
@@ -38,7 +38,18 @@ def main():
     device, gpu_ids = util.get_available_devices()
 
     num_classes = opt.num_classes
-    noise_dim = opt.latent_dim + opt.num_classes
+    # Size of feature maps in generator
+    ngf = 64
+    # Size of feature maps in discriminator
+    ndf = 64
+
+    # label preprocess
+    label_vals = [i for i in range(num_classes)]
+    onehot = torch.zeros(num_classes, num_classes).to(device)
+    onehot = onehot.scatter_(1, torch.LongTensor(label_vals).view(num_classes, 1).to(device), 1).view(num_classes, num_classes, 1, 1)
+    fill = torch.zeros([num_classes, num_classes, opt.img_size, opt.img_size]).to(device)
+    for i in range(num_classes):
+        fill[i, i, :, :] = 1
 
     def weights_init(m):
         classname = m.__class__.__name__
@@ -58,10 +69,10 @@ def main():
     os.makedirs(output_sample_images_path, exist_ok=True)
 
     train_set = datasets.ImageFolder(root=train_images_path,
-                                transform=transforms.Compose([
-                                    transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                                    transform=transforms.Compose([
+                                        transforms.Resize((opt.img_size, opt.img_size)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
@@ -69,8 +80,8 @@ def main():
                                             shuffle=True,
                                             num_workers=opt.num_workers)
 
-    gen = acgan.Generator(noise_dim).to(device)
-    disc = acgan.Discriminator(num_classes).to(device)
+    gen = cdcgan.Generator(opt.channels, opt.latent_dim, num_classes, ngf).to(device)
+    disc = cdcgan.Discriminator(opt.channels, opt.num_classes, ndf).to(device)
 
     gen.apply(weights_init)
     disc.apply(weights_init)
@@ -79,7 +90,6 @@ def main():
     optimD = optim.Adam(disc.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
     adversarial_loss = torch.nn.BCELoss()
-    auxiliary_loss = torch.nn.CrossEntropyLoss()
 
     real_label_val = 1
     real_label_low = 0.75
@@ -138,13 +148,14 @@ def main():
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             labels_onehot = F.one_hot(labels, num_classes)
+            #labels_onehot = onehot[labels]
 
-            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1)
+            noise = torch.cat((noise, labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)
             gen_images = gen(noise)
             for i in range(images_done, images_done + batch_size):
-                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i), normalize=True)       
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i), normalize=True)
                 if (not source_images_available):
-                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)     
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)          
             images_done += batch_size
         
         fid = eval_fid(output_images_path, output_source_images_path)
@@ -165,7 +176,8 @@ def main():
                 labels[i*num_images + j] = i
         
         labels_onehot = F.one_hot(labels, num_classes)
-        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
+        #labels_onehot = onehot[labels]
+        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)        
         sample_imgs = gen(z)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
@@ -211,6 +223,7 @@ def main():
             images, class_labels = data
             images = images.to(device)
             class_labels = class_labels.to(device)
+            class_labels_fill = fill[class_labels]
 
             batch_size = images.size(0)
 
@@ -226,36 +239,33 @@ def main():
 
             optimD.zero_grad()
 
-            real_pred, real_aux = disc(images)
+            real_pred = disc(images, class_labels_fill).view(-1)
             
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, real_label_smooth) + torch.mul(mask, fake_label)
 
-            d_real_loss = (adversarial_loss(real_pred, noisy_label) + auxiliary_loss(real_aux, class_labels)) / 2
+            d_real_loss = adversarial_loss(real_pred, noisy_label)
 
             # Train with fake batch
             noise = torch.randn((batch_size, opt.latent_dim)).to(device)
             gen_class_labels = torch.randint(0, num_classes, (batch_size,)).to(device)
             gen_class_labels_onehot = F.one_hot(gen_class_labels, num_classes)
+            #gen_class_labels_onehot = onehot[gen_class_labels]
+            gen_class_labels_fill = fill[gen_class_labels]
 
-            noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1)
+            noise = torch.cat((noise, gen_class_labels_onehot.to(dtype=torch.float)), 1).view(-1, opt.latent_dim + num_classes, 1, 1)
             gen_images = gen(noise)
-            fake_pred, fake_aux = disc(gen_images.detach())
+            fake_pred = disc(gen_images.detach(), gen_class_labels_fill).view(-1)
 
             mask = torch.rand((batch_size,), device=device) <= label_noise_prob
             mask = mask.type(torch.float)            
             noisy_label = torch.mul(1-mask, fake_label) + torch.mul(mask, real_label_smooth)
 
-            d_fake_loss = (adversarial_loss(fake_pred, noisy_label) + auxiliary_loss(fake_aux, gen_class_labels)) / 2
+            d_fake_loss = adversarial_loss(fake_pred, noisy_label)
 
             # Total discriminator loss
-            d_loss = (d_real_loss + d_fake_loss) / 2
-
-            # Calculate discriminator accuracy
-            pred = np.concatenate([real_aux.data.cpu().numpy(), fake_aux.data.cpu().numpy()], axis=0)
-            gt = np.concatenate([class_labels.data.cpu().numpy(), gen_class_labels.data.cpu().numpy()], axis=0)
-            d_acc = np.mean(np.argmax(pred, axis=1) == gt)
+            d_loss = d_real_loss + d_fake_loss
 
             d_loss.backward()
             optimD.step()
@@ -266,8 +276,8 @@ def main():
 
             optimG.zero_grad()
 
-            validity, aux_scores = disc(gen_images)
-            g_loss = 0.5 * (adversarial_loss(validity, real_label) + auxiliary_loss(aux_scores, gen_class_labels))
+            validity = disc(gen_images, gen_class_labels_fill).view(-1)
+            g_loss = adversarial_loss(validity, real_label)
 
             g_loss.backward()
             optimG.step()
@@ -275,12 +285,11 @@ def main():
             # Save losses and accuracy for plotting
             G_losses.append(g_loss.item())
             D_losses.append(d_loss.item())
-            D_acc.append(d_acc)
 
             # Output training stats
             if i % opt.print_every == 0:
-                print("[Epoch %d/%d] [Batch %d/%d] [D loss: %.4f, acc:  %d%%] [G loss: %.4f]"
-                % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), 100 * d_acc, g_loss.item())
+                print("[Epoch %d/%d] [Batch %d/%d] [D loss: %.4f] [G loss: %.4f]"
+                % (epoch, opt.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
                 )
 
             batches_done = epoch * len(dataloader) + i
@@ -304,9 +313,6 @@ def main():
             torch.save(gen.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
             print("Saving G & D loss plot...")
             save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
-            print("Saving D accuracy plot...")
-            save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot_{}.png".format(epoch)))
-            
             print("Validating model...")
             gen.eval()
             with torch.no_grad():
@@ -325,10 +331,6 @@ def main():
 
     print("Saving final G & D loss plot...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
-    print("Done!")
-
-    print("Saving final D accuracy plot...")
-    save_acc_plot(os.path.join(opt.output_path, opt.version, "accuracy_plot.png"))
     print("Done!")
 
     print("Validating final model...")
