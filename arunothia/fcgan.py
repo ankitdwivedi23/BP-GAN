@@ -187,14 +187,18 @@ def main():
                 if  d < dist[i]:
                     dist[i] = d
                     nn[i] = img
-        return torch.stack(nn, dim=0).to(device)
+        r = torch.stack(nn, dim=0).to(device)
+        print(r.shape)
+        return r
     
     def get_nearest_neighbour(sample_images, num_images):
         total_imgs = sample_images.shape[0]
         nn = []
         for i in range(num_classes):
             nn.append(get_nn(sample_images[i*num_images:(i+1)*num_images], i))
-        return torch.stack(nn, dim=0).to(device)
+        r = torch.stack(nn, dim=0).to(device)
+        print(r.shape)
+        return r
 
     def sample_images(num_images, batches_done, isLast):
         # Sample noise - declared once at the top to maintain consistency of samples
@@ -215,6 +219,7 @@ def main():
         vutils.save_image(const_sample_imgs.data, "{}/{}.png".format(output_const_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
         if isLast:
+            print(sample_imgs.shape)
             nearest_neighbour_imgs = get_nearest_neighbour(sample_imgs, num_images)
             vutils.save_image(nearest_neighbour_imgs.data, "{}/{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
             nearest_neighbour_imgs = get_nearest_neighbour(const_sample_imgs, num_images)
