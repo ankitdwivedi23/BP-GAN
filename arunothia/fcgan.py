@@ -174,13 +174,15 @@ def main():
         nn = [None]*len(images)
         dist = [np.inf]*len(images)
         for e, data in enumerate(dataloader, 0):
-            imgs, labels = data
-            imgs = imgs.to(device)
+            img, label = data
+            if label != class_label:
+                continue
+            img = img.to(device)
             for i in range(len(images)):
-                d = get_dist(images[i], imgs[e])
+                d = get_dist(images[i], img)
                 if  d < dist[i]:
                     dist[i] = d
-                    nn[i] = imgs[e]
+                    nn[i] = img
         return torch.stack(nn, dim=0).to(device)
     
     def get_nearest_neighbour(sample_images, num_images):
