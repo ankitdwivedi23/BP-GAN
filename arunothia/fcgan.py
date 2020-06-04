@@ -216,6 +216,7 @@ def main():
     def sample_images(num_images, batches_done, isLast):
         # Sample noise - declared once at the top to maintain consistency of samples
         z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+
         '''
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -225,7 +226,7 @@ def main():
         
         labels_onehot = F.one_hot(labels, num_classes)        
         '''
-
+        
         labels_onehot = get_onehot_labels(num_images)       
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
