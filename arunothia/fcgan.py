@@ -58,6 +58,8 @@ def main():
 
     os.makedirs(output_train_images_path, exist_ok=True)
     os.makedirs(output_sample_images_path, exist_ok=True)
+    os.makedirs(output_nn_images_path, exist_ok=True)
+    os.makedirs(output_const_sample_images_path, exist_ok=True)
 
     train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
