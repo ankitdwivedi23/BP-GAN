@@ -167,7 +167,7 @@ def main():
             rmtree(output_images_path)
         return fid
 
-    def dist(img1, img2):
+    def get_dist(img1, img2):
         return torch.dist(img1, img2)
     
     def get_nn(images, class_label):
@@ -177,7 +177,7 @@ def main():
             imgs, labels = data
             imgs = imgs.to(device)
             for i in range(len(images)):
-                d = dist(images[i], imgs[e])
+                d = get_dist(images[i], imgs[e])
                 if  d < dist[i]:
                     dist[i] = d
                     nn[i] = imgs[e]
