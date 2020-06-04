@@ -176,7 +176,7 @@ def main():
         for e, data in enumerate(dataloader, 0):
             imgs, labels = data
             imgs = imgs.to(device)
-            for i in len(images):
+            for i in range(len(images)):
                 d = dist(images[i], imgs[e])
                 if  d < dist[i]:
                     dist[i] = d
