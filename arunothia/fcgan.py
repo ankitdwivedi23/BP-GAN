@@ -54,6 +54,7 @@ def main():
     output_train_images_path = os.path.join(opt.output_path, opt.version, "train")
     output_sample_images_path = os.path.join(opt.output_path, opt.version, "sample")
     output_nn_images_path = os.path.join(opt.output_path, opt.version, "nn")
+    output_const_images_path = os.path.join(opt.output_path, opt.version, "constant_sample")
 
     os.makedirs(output_train_images_path, exist_ok=True)
     os.makedirs(output_sample_images_path, exist_ok=True)
@@ -101,7 +102,7 @@ def main():
     val_epochs = []
 
     # Define a fixed noise vector for consistent samples
-    z = torch.randn((num_classes * opt.num_sample_images, opt.latent_dim)).to(device)
+    z_const = torch.randn((num_classes * opt.num_sample_images, opt.latent_dim)).to(device)
 
     def print_labels():
         for class_name in train_set.classes:
@@ -189,7 +190,7 @@ def main():
 
     def sample_images(num_images, batches_done, isLast):
         # Sample noise - declared once at the top to maintain consistency of samples
-        # z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
         # Get labels ranging from 0 to n_classes for n rows
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
@@ -200,11 +201,16 @@ def main():
         labels_onehot = F.one_hot(labels, num_classes)
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
+        z_const_cat = torch.cat((z_const, labels_onehot.to(dtype=torch.float)), 1)   
+        const_sample_imgs = gen(z_const_cat)
         vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+        vutils.save_image(const_sample_imgs.data, "{}/{}.png".format(output_const_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
         if isLast:
             nearest_neighbour_imgs = get_nearest_neighbour(sample_imgs, num_images)
             vutils.save_image(nearest_neighbour_imgs.data, "{}/{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+            nearest_neighbour_imgs = get_nearest_neighbour(const_sample_imgs, num_images)
+            vutils.save_image(nearest_neighbour_imgs.data, "{}/const_{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     
     def save_loss_plot(path):
