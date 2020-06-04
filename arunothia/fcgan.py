@@ -188,7 +188,7 @@ def main():
                     dist[i] = d
                     nn[i] = img
         r = torch.stack(nn, dim=0).squeeze().to(device)
-        print(r.shape)
+        #print(r.shape)
         return r
     
     def get_nearest_neighbour(sample_images, num_images):
@@ -197,7 +197,7 @@ def main():
         for i in range(num_classes):
             nn.append(get_nn(sample_images[i*num_images:(i+1)*num_images], i))
         r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
-        print(r.shape)
+        #print(r.shape)
         return r
 
     def sample_images(num_images, batches_done, isLast):
@@ -219,11 +219,12 @@ def main():
         vutils.save_image(const_sample_imgs.data, "{}/{}.png".format(output_const_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
         if isLast:
-            print(sample_imgs.shape)
+            print("Estimating nearest neighbors for the last samples, this takes a few minutes...")
             nearest_neighbour_imgs = get_nearest_neighbour(sample_imgs, num_images)
             vutils.save_image(nearest_neighbour_imgs.data, "{}/{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
             nearest_neighbour_imgs = get_nearest_neighbour(const_sample_imgs, num_images)
             vutils.save_image(nearest_neighbour_imgs.data, "{}/const_{}.png".format(output_nn_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
+            print("Saved nearest neighbors.")
 
     
     def save_loss_plot(path):
