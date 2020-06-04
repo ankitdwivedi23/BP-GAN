@@ -200,18 +200,33 @@ def main():
         #r = torch.stack(nn, dim=0).squeeze().view(-1, 3, opt.img_size, opt.img_size).to(device)
         #print(r.shape)
         return all_nn
+    
+    def get_onehot_labels(num_images):
+        labels = torch.zeros(num_images, 1)
+        for i in range(num_classes - 1):
+            temp = torch.ones(num_images, 1) + i
+            labels = torch.cat([labels, temp], 0)
+            
+        labels_onehot = torch.zeros(num_images * num_classes, num_classes)
+        labels_onehot.scatter_(1, labels.type(torch.LongTensor), 1)
+
+        return labels_onehot
+
 
     def sample_images(num_images, batches_done, isLast):
         # Sample noise - declared once at the top to maintain consistency of samples
         z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
-        # Get labels ranging from 0 to n_classes for n rows
+        '''
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
 
         for i in range(num_classes):
             for j in range(num_images):
                 labels[i*num_images + j] = i
         
-        labels_onehot = F.one_hot(labels, num_classes)
+        labels_onehot = F.one_hot(labels, num_classes)        
+        '''
+
+        labels_onehot = get_onehot_labels(num_images)       
         z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
         sample_imgs = gen(z)
         z_const_cat = torch.cat((z_const, labels_onehot.to(dtype=torch.float)), 1)   
