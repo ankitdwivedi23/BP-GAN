@@ -369,7 +369,7 @@ def main():
             batches_done = epoch * len(dataloader) + i
             
             # Generate and save sample images
-            isLast = ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1))
+            isLast = ((epoch == opt.num_epochs) and (i == len(dataloader)-1))
             if (batches_done % opt.sample_interval == 0) or isLast:
                 # Put G in eval mode
                 gen.eval()
