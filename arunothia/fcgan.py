@@ -208,7 +208,7 @@ def main():
             labels = torch.cat([labels, temp], 0)
             
         labels_onehot = torch.zeros(num_images * num_classes, num_classes).to(device)
-        labels_onehot.scatter_(1, labels.type(torch.LongTensor), 1)
+        labels_onehot.scatter_(1, labels.to(torch.long), 1)
 
         return labels_onehot
 
