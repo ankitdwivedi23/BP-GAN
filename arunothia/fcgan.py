@@ -369,7 +369,7 @@ def main():
             batches_done = epoch * len(dataloader) + i
             
             # Generate and save sample images
-            isLast = ((epoch == opt.num_epochs) and (i == len(dataloader)-1))
+            isLast = ((epoch == opt.num_epochs-1) and (i == len(dataloader)-1))
             if (batches_done % opt.sample_interval == 0) or isLast:
                 # Put G in eval mode
                 gen.eval()
@@ -392,8 +392,7 @@ def main():
             
             print("Validating model...")	
             with torch.no_grad():
-            	#fid = validate(keep_images=False)
-                fid = 100
+            	fid = validate(keep_images=False)
             print("Validation FID: {}".format(fid))
             with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
                 f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
@@ -426,8 +425,7 @@ def main():
     print("Validating final model...")
     gen.eval()
     with torch.no_grad():
-        #fid = validate()
-        fid = 40
+        fid = validate()
     print("Final Validation FID: {}".format(fid))
     with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
         f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
