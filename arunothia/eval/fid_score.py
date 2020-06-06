@@ -231,6 +231,23 @@ def calculate_fid_given_paths(paths, batch_size, device, dims=2048):
 
     return fid_value
 
+
+def get_activations_given_path(path, batch_size, device, dims=2048):
+    """Calculates the FID of two paths"""
+    if not os.path.exists(path):
+        raise RuntimeError('Invalid path: %s' % p)
+
+    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+    model = InceptionV3([block_idx])
+    model = model.to(device)
+
+    path = pathlib.Path(path)
+    files = list(path.rglob('*.jpg')) + list(path.rglob('*.png'))
+
+    return get_activations(files, model, device, batch_size, dims)
+
+
 '''
 if __name__ == '__main__':
     args = parser.parse_args()
