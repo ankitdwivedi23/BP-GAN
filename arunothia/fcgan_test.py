@@ -28,9 +28,11 @@ def set_random_seed(seed=23):
     random.seed(seed)
 
 def main():
-    set_random_seed()
+    #set_random_seed()
 
-    device, gpu_ids = util.get_available_devices()
+    # Change the following comments for CPU
+    #device, gpu_ids = util.get_available_devices()
+    device = torch.device('cpu')
 
     # Arguments
     opt = args.get_setup_args()
@@ -119,9 +121,7 @@ def main():
 
         return labels_onehot
 
-    def sample_images(num_images):
-        # Sample noise - declared once at the top to maintain consistency of samples
-        z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+    def sample_images(num_images, itr):
 
         '''
         labels = torch.zeros((num_classes * num_images,), dtype=torch.long).to(device)
@@ -132,12 +132,6 @@ def main():
         
         labels_onehot = F.one_hot(labels, num_classes)        
         '''
-
-        labels_onehot = get_onehot_labels(num_images)       
-        z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
-        sample_imgs = gen(z)
-        for i in range(len(sample_imgs)):
-            vutils.save_image(sample_imgs[i], "{}/{}.png".format(output_sample_images_path, i), normalize=True)
 
         train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
@@ -186,9 +180,17 @@ def main():
             #    vutils.save_image(img, "{}/{}.jpg".format(output_train_images_path, i), normalize=True)
 
         print("Estimating nearest neighbors in pixel space, this takes a few minutes...")
-        nearest_neighbour_imgs_list = get_nearest_neighbour_pixels(sample_imgs, num_images, train_images, train_labels)
-        for label, nn_imgs in enumerate(nearest_neighbour_imgs_list):
-            vutils.save_image(nn_imgs.data, "{}/{}.png".format(output_nn_pixel_images_path, label), nrow=num_images, padding=2, normalize=True)
+
+        for it in range(itr):
+            z = torch.randn((num_classes * num_images, opt.latent_dim)).to(device)
+            labels_onehot = get_onehot_labels(num_images)       
+            z = torch.cat((z, labels_onehot.to(dtype=torch.float)), 1)        
+            sample_imgs = gen(z)
+            for i in range(len(sample_imgs)):
+                vutils.save_image(sample_imgs[i], "{}/{}.png".format(output_sample_images_path, i), normalize=True)
+            nearest_neighbour_imgs_list = get_nearest_neighbour_pixels(sample_imgs, num_images, train_images, train_labels)
+            for label, nn_imgs in enumerate(nearest_neighbour_imgs_list):
+                vutils.save_image(nn_imgs.data, "{}/iter{}-{}.png".format(output_nn_pixel_images_path, it, label), nrow=num_images, padding=2, normalize=True)
         print("Saved nearest neighbors.")
 
         '''
@@ -253,12 +255,14 @@ def main():
     val_images_path = os.path.join(opt.data_path, "val")
     model_path = os.path.join(opt.output_path, opt.version, opt.model_file)
 
+    
+
     gen = fcgan.Generator(noise_dim).to(device)
 
     if (opt.model_file.endswith(".pt")):
-        gen.load_state_dict(torch.load(model_path))
+        gen.load_state_dict(torch.load(model_path, map_location=device))
     elif (opt.model_file.endswith(".tar")):
-        checkpoint = torch.load(model_path)
+        checkpoint = torch.load(model_path, map_location=device)
         gen.load_state_dict(checkpoint['g_state_dict'])
 
     gen.eval()
@@ -273,7 +277,7 @@ def main():
         fid = evaluate(source_images_path)
         print("FID: {}".format(fid))
     elif opt.eval_mode == "nn":
-        sample_images(opt.num_sample_images)
+        sample_images(opt.num_sample_images, 50)
 
 if __name__ == '__main__':
     main()
