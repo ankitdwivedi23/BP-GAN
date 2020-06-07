@@ -16,7 +16,7 @@ from shutil import rmtree
 
 import args
 import util
-from models import fcgan
+from models import dcgan
 from eval import fid_score
 
 def set_random_seed(seed=23):
