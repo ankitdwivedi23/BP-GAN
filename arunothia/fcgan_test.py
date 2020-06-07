@@ -265,7 +265,7 @@ def main():
 
     if opt.eval_mode == "val":
         source_images_path = val_images_path
-    else:
+    elif opt.eval_mode == "test":
         source_images_path = test_images_path
 
     if opt.eval_mode == "val" or opt.eval_mode == "test":
