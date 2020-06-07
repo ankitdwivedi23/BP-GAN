@@ -31,8 +31,8 @@ def main():
     #set_random_seed()
 
     # Change the following comments for CPU
-    #device, gpu_ids = util.get_available_devices()
-    device = torch.device('cpu')
+    device, gpu_ids = util.get_available_devices()
+    #device = torch.device('cpu')
 
     # Arguments
     opt = args.get_setup_args()
