@@ -268,7 +268,7 @@ def main():
     else:
         source_images_path = test_images_path
 
-    if opt.eval_mode == "val" or opt.eval_mode == "train":
+    if opt.eval_mode == "val" or opt.eval_mode == "test":
         print("Evaluating model...")
         fid = evaluate(source_images_path)
         print("FID: {}".format(fid))

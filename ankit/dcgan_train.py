@@ -18,7 +18,17 @@ import util
 from models import dcgan
 from eval import fid_score
 
+def set_random_seed(seed=23):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
 def main():
+
+    set_random_seed()
 
     #cuda = True if torch.cuda.is_available() else False
     device, gpu_ids = util.get_available_devices()
@@ -31,19 +41,22 @@ def main():
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0)
     
+    # Arguments
+    opt = args.get_setup_args()
+
     # Number of channels in the training images
-    nc = 3
+    nc = opt.channels
     # Size of z latent vector (i.e. size of generator input)
-    nz = 100
+    nz = opt.latent_dim
     # Size of feature maps in generator
     ngf = 64
     # Size of feature maps in discriminator
     ndf = 64
 
-    # Arguments
-    opt = args.get_setup_args()
+    num_classes = opt.num_classes
 
     train_images_path = os.path.join(opt.data_path, "train")
+    val_images_path = os.path.join(opt.data_path, "val")
     output_model_path = os.path.join(opt.output_path, opt.version)
     output_train_images_path = os.path.join(opt.output_path, opt.version, "train")
     output_sample_images_path = os.path.join(opt.output_path, opt.version, "sample")
@@ -62,7 +75,7 @@ def main():
 
     # Create batch of latent vectors to visualize
     # the progress of the generator
-    sample_noise = torch.randn(64, nz, 1, 1, device=device)
+    # sample_noise = torch.randn(64, nz, 1, 1, device=device)
 
     # Establish convention for real and fake labels during training
     real_label = 1
@@ -75,7 +88,8 @@ def main():
     train_set = datasets.ImageFolder(root=train_images_path,
                                 transform=transforms.Compose([
                                     transforms.Resize((opt.img_size, opt.img_size)),
-                                    transforms.ToTensor()
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                             ]))
 
     dataloader = torch.utils.data.DataLoader(train_set,
@@ -90,8 +104,62 @@ def main():
     G_losses = []
     D_losses = []
     FIDs = []
-    best_fid = float("inf")
-    iters = 0
+    val_epochs = []
+    
+    def eval_fid(gen_images_path, eval_images_path):        
+        print("Calculating FID...")
+        fid = fid_score.calculate_fid_given_paths((gen_images_path, eval_images_path), opt.batch_size, device)
+        return fid
+
+    
+    def validate(keep_images=True):
+        val_set = datasets.ImageFolder(root=val_images_path,
+                                       transform=transforms.Compose([
+                                                 transforms.Resize((opt.img_size, opt.img_size)),
+                                                 transforms.ToTensor()
+                            ]))
+        
+        val_loader = torch.utils.data.DataLoader(val_set,
+                                            batch_size=opt.batch_size,
+                                            shuffle=True,
+                                            num_workers=opt.num_workers)
+        
+        output_images_path = os.path.join(opt.output_path, opt.version, "val")
+        os.makedirs(output_images_path, exist_ok=True)
+
+        output_source_images_path = val_images_path + "_" + str(opt.img_size)
+
+        source_images_available = True
+
+        if (not os.path.exists(output_source_images_path)):
+            os.makedirs(output_source_images_path)
+            source_images_available = False
+
+        images_done = 0
+        for _, data in enumerate(val_loader, 0):
+            images, _ = data
+            batch_size = images.size(0)
+            noise = torch.randn((batch_size, nz, 1, 1)).to(device)
+
+            gen_images = netG(noise)
+            for i in range(images_done, images_done + batch_size):
+                vutils.save_image(gen_images[i - images_done, :, :, :], "{}/{}.jpg".format(output_images_path, i), normalize=True)       
+                if (not source_images_available):
+                    vutils.save_image(images[i - images_done, :, :, :], "{}/{}.jpg".format(output_source_images_path, i), normalize=True)     
+            images_done += batch_size
+        
+        fid = eval_fid(output_images_path, output_source_images_path)
+        if (not keep_images):
+            print("Deleting images generated for validation...")
+            rmtree(output_images_path)
+        return fid
+
+
+    def sample_images(num_images, batches_done):
+        # Sample noise
+        z = torch.randn((num_classes * num_images, nz, 1, 1)).to(device)
+        sample_imgs = netG(z)
+        vutils.save_image(sample_imgs.data, "{}/{}.png".format(output_sample_images_path, batches_done), nrow=num_images, padding=2, normalize=True)
 
     def save_loss_plot(path):
         plt.figure(figsize=(10,5))
@@ -103,20 +171,21 @@ def main():
         plt.legend()
         plt.savefig(path)
 
-    def save_fid_plot(path):
-        N = len(FIDs)
+    def save_fid_plot(FIDs, epochs, path):
+        #N = len(FIDs)
         plt.figure(figsize=(10,5))
         plt.title("FID on Validation Set")
-        plt.plot(FIDs)
+        plt.plot(epochs, FIDs)
         plt.xlabel("epochs")
         plt.ylabel("FID")
-        plt.xlim(0, opt.num_epochs)
+        #plt.xticks([i * 49 for i in range(1, N+1)])    
         plt.savefig(path)
+        plt.close()
 
 
     print("Starting Training Loop...")
     # For each epoch
-    for epoch in range(opt.num_epochs):
+    for epoch in range(1, opt.num_epochs + 1):
         # For each batch in the dataloader
         for i, data in enumerate(dataloader, 0):
 
@@ -194,20 +263,52 @@ def main():
                 netG.eval()
                 
                 with torch.no_grad():                
-                    fake_sample = netG(sample_noise).detach().cpu()
-                vutils.save_image(fake_sample.data[:64], "{}/{}.png".format(output_sample_images_path, batches_done), nrow=5, padding=2, normalize=True)
-                vutils.save_image(fake.data[:64], "{}/{}.png".format(output_train_images_path, batches_done), nrow=5, padding=2, normalize=True)
+                    sample_images(opt.num_sample_images, batches_done)
+                vutils.save_image(fake.data[:25], "{}/{}.png".format(output_train_images_path, batches_done), nrow=5, padding=2, normalize=True)
                 
                 # Put G back in train mode
                 netG.train()
+            
+        # Save model checkpoint
+        if (epoch != opt.num_epochs and epoch % opt.checkpoint_epochs == 0):
+            print("Checkpoint at epoch {}".format(epoch))
+            print("Saving generator model...")
+            torch.save(netG.state_dict(), os.path.join(output_model_path, "model_checkpoint_{}.pt".format(epoch)))
+            print("Saving G & D loss plot...")
+            save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot_{}.png".format(epoch)))
+            
+            print("Validating model...")
+            netG.eval()
+            with torch.no_grad():
+                fid = validate(keep_images=False)
+            print("Validation FID: {}".format(fid))
+            with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
+                f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
+            FIDs.append(fid)
+            val_epochs.append(epoch)
+            print("Saving FID plot...")
+            save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot_{}.png".format(epoch)))
+            netG.train()
     
-    print("Saving generator model...")
+    print("Saving final generator model...")
     torch.save(netG.state_dict(), os.path.join(output_model_path, "model.pt"))
     print("Done!")
 
-    print("Saving plot showing generator and discriminator loss during training...")
+    print("Saving final G & D loss plot...")
     save_loss_plot(os.path.join(opt.output_path, opt.version, "loss_plot.png"))
     print("Done!")
+
+    print("Validating final model...")
+    netG.eval()    
+    with torch.no_grad():
+        fid = validate()
+    print("Final Validation FID: {}".format(fid))
+    with open(os.path.join(opt.output_path, opt.version, "FIDs.txt"), "a") as f:
+        f.write("Epoch: {}, FID: {}\n".format(epoch, fid))
+    FIDs.append(fid)
+    val_epochs.append(epoch)
+    print("Saving final FID plot...")
+    save_fid_plot(FIDs, val_epochs, os.path.join(opt.output_path, opt.version, "fid_plot"))
 
 if __name__ == '__main__':
     main()
