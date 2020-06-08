@@ -16,7 +16,7 @@ from shutil import rmtree
 
 import args
 import util
-from models import fcgan
+from models import cwgan
 from eval import fid_score
 
 def set_random_seed(seed=23):
@@ -257,7 +257,7 @@ def main():
 
     
 
-    gen = fcgan.Generator(noise_dim).to(device)
+    gen = cwgan.Generator(noise_dim).to(device)
 
     if (opt.model_file.endswith(".pt")):
         gen.load_state_dict(torch.load(model_path, map_location=device))
