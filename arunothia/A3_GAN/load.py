@@ -1,4 +1,5 @@
 from setup import *
+import torchvision.utils as vutils
 
 class ChunkSampler(sampler.Sampler):
     """Samples elements sequentially from some offset. 
@@ -60,8 +61,9 @@ def load_data(data_type, NUM_TRAIN=50000, batch_size=128, img_resize=28, num_cha
 
 def show_data_split():
 
-    book_data = datasets.ImageFolder(root='../data/Task2_split/Task2_Split/train',
+    book_data = datasets.ImageFolder(root='../data/Task2_Split/train',
                                             transform=transforms.Compose([
+                                            transforms.Resize((64, 64)),
                                             transforms.ToTensor()
                                     ]))
     
@@ -85,8 +87,9 @@ def show_data_split():
 
     for i in range(6):
         for j in range(6):
-            flat_input[j*6+i] = inp[i][j]
+            flat_input[i*6+j] = inp[i][j]
     
     out = torchvision.utils.make_grid(flat_input, nrow=6)
     #imshow(out, title=[class_names[x] for x in range(6)]).savefig('../results/data_split_')
-    imshow(out).savefig('../results/data_split')
+    #imshow(out).savefig('../results/data_split_final')
+    vutils.save_image(flat_input, "../results/ata_split_final_.jpg", nrow=6)
