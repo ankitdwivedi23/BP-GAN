@@ -129,6 +129,12 @@ dmypy.json
 .pyre/
 
 # train, val, test data
+images/
 train/
 val/
 test/
+mnist/
+celeba/
+
+# results
+results/
