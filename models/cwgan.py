@@ -1,3 +1,5 @@
+# Code copied from https://github.com/jalola/improved-wgan-pytorch
+
 from torch import nn
 from torch.autograd import grad
 import torch
